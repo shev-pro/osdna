@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <cstring>
 #include "osdna_compressor.h"
+#include "osdna_compression_core.h"
 
 osdna_error preflight_checks(OSDNA_ctx *ctx);
 
@@ -33,15 +34,11 @@ osdna_error osdna_process(OSDNA_ctx *ctx) {
         return st;
     }
 
-    int bytesRead;
-    char buffer[1024];
-    while (bytesRead = fread(buffer, 1, 1024, ctx->read_stream)) {
-        for (int i = 0; i < bytesRead; i++) {
-            printf("%c", buffer[i]);
-        }
+    if (ctx->direction == COMPRESSION) {
+        return compress_core(ctx);
+    } else {
+        return decompress_core(ctx);
     }
-
-    return OSDNA_OK;
 }
 
 void osdna_free_ctx(OSDNA_ctx *ctx) {
@@ -64,4 +61,6 @@ osdna_error preflight_checks(OSDNA_ctx *ctx) {
     if (ctx->write_stream == NULL) {
         return OSDNA_IO_ERROR;
     }
+
+    return OSDNA_OK;
 }
