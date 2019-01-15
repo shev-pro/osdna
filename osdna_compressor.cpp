@@ -54,11 +54,13 @@ void osdna_free_ctx(OSDNA_ctx *ctx) {
 osdna_error preflight_checks(OSDNA_ctx *ctx) {
     ctx->read_stream = fopen(ctx->input_file, "rb");
     if (ctx->read_stream == NULL) {
+        printf("Read stream cant be opened\n");
         return OSDNA_IO_ERROR;
     }
 
     ctx->write_stream = fopen(ctx->output_file, "wb");
     if (ctx->write_stream == NULL) {
+        printf("Write stream cant be opened\n");
         return OSDNA_IO_ERROR;
     }
 

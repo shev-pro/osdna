@@ -4,17 +4,14 @@
 int main() {
     OSDNA_ctx *ctx = osdna_init_ctx();
     osdna_set_direction(ctx, COMPRESSION);
-    osdna_set_input_file(ctx, "../lambdavirus.dna");
-    osdna_set_output_file(ctx, "../lambdavirus.dna.osdna");
+    osdna_set_input_file(ctx, "../lambda_virus.dna");
+    osdna_set_output_file(ctx, "../lambda_virus.dna.osdna");
 
-//    osdna_error status = osdna_process(ctx);
+    osdna_error status = osdna_process(ctx);
 
-    FILE *test = fopen("../lambdavirus.dna", "wb");
-    osdna_bit_handler *handle = osdna_bit_init(test);
-    write_char(handle, 'A');
-    write_char(handle, 'A');
-    write_char(handle, 'A');
-    write_char(handle, 'A');
+    if (status != OSDNA_OK) {
+        printf("We have an error %d", status);
+    }
 
     if (ctx) {
         osdna_free_ctx(ctx);
