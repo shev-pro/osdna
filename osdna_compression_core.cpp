@@ -20,7 +20,25 @@ osdna_error compress_core(OSDNA_ctx *ctx) {
             if (!is_acceptable_char(curr_char))  // are acceptable only AGCT, everything else is skipped
                 continue;
 
-            osdna_bit_write_char(bit_write_handle, curr_char);
+            if (last_char == curr_char) {
+                last_occ_len++;
+                if (last_occ_len <= TRIGGER_SIZE)
+                    osdna_bit_write_char(bit_write_handle, curr_char);
+            } else {
+                if (last_occ_len > TRIGGER_SIZE) {
+                    last_occ_len -= TRIGGER_SIZE;
+                    while (last_occ_len >= 3) {
+                        osdna_bit_write_char(bit_write_handle, '3');
+                        last_occ_len -= 3;
+                    }
+                    osdna_bit_write_char(bit_write_handle, curr_char);
+                } else if (last_occ_len == TRIGGER_SIZE)
+                    osdna_bit_write_char(bit_write_handle, '0');
+
+                osdna_bit_write_char(bit_write_handle, curr_char);
+                last_occ_len = 1;
+            }
+            last_char = curr_char;
         }
     }
 
