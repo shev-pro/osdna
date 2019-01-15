@@ -63,10 +63,17 @@ osdna_error compress_core(OSDNA_ctx *ctx) {
 }
 
 osdna_error decompress_core(OSDNA_ctx *ctx) {
-    printf("Initializing compression core\n");
+    printf("Initializing decompression core\n");
 
     int bytesRead;
     char file_read_buff[1024];
+    char file_write_buff[1024];
+    int bytes_to_write = 0;
+
+    fseek(ctx->read_stream, 0L, SEEK_END);
+    long ssize = ftell(ctx->read_stream);
+    ssize = ssize - 2; // last 2 bytes are special once cause used for padding
+    fseek(ctx->read_stream, 0L, SEEK_SET);
 
     int print_counter = 0;
     while (bytesRead = fread(file_read_buff, 1, 1024, ctx->read_stream)) {
@@ -74,8 +81,24 @@ osdna_error decompress_core(OSDNA_ctx *ctx) {
             printf("Processed %d Mb\n", print_counter / 1024);
         }
         print_counter++;
+
         for (int i = 0; i < bytesRead; i++) {
+            ssize--;
             char curr_char = file_read_buff[i];
+            if (ssize == 0) { //special case - padding
+                printf("handle padding");
+            } else {
+                if (is_acceptable_char(curr_char)) { //its a plain char - write to output
+                    file_write_buff[bytes_to_write] = curr_char;
+                    bytes_to_write++;
+                    if (bytes_to_write == 1024) { // probably i miss +1 here
+                        fwrite(file_write_buff, sizeof(char), 1024, ctx->write_stream);
+                        bytes_to_write = 0;
+                    }
+                } else {
+                    // continue here
+                }
+            }
 
         }
     }
