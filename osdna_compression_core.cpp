@@ -8,16 +8,16 @@ osdna_error compress_core(OSDNA_ctx *ctx) {
     printf("Initializing compression core\n");
 
     int bytesRead;
-    char file_read_buff[1024];
+    char file_read_buff[1024]; // for perfomance reasons lets read 1KB at once
     char curr_char;
-    char last_char = 'Q';
+    char last_char = 'Q'; // Any char excluded AGTC
     int last_occ_len = 0;
     osdna_bit_handler *bit_write_handle = osdna_bit_init(ctx->write_stream);
 
     int print_counter = 0;
     while (bytesRead = fread(file_read_buff, 1, 1024, ctx->read_stream)) {
         if (print_counter % 1024 == 0) {
-            printf("Processed %d Mb\n", print_counter/1024);
+            printf("Processed %d Mb\n", print_counter / 1024);
         }
         print_counter++;
         for (int i = 0; i < bytesRead; i++) {
@@ -56,23 +56,6 @@ osdna_error compress_core(OSDNA_ctx *ctx) {
                 }
             }
             last_char = curr_char;
-//            if (last_char == curr_char) {
-//                last_occ_len++;
-////                if (last_occ_len >= TRIGGER_SIZE)
-////                    osdna_bit_write_char(bit_write_handle, curr_char);
-//            } else {
-//                if (last_occ_len > TRIGGER_SIZE) {
-//                    last_occ_len -= TRIGGER_SIZE;
-//                    while (last_occ_len >= 3) {
-//                        osdna_bit_write_char(bit_write_handle, '3');
-//                        last_occ_len -= 3;
-//                    }
-//                    osdna_bit_write_char(bit_write_handle, curr_char);
-//                } else if (last_occ_len == TRIGGER_SIZE)
-//                    osdna_bit_write_char(bit_write_handle, '0');
-//                last_occ_len = 1;
-//            }
-//            last_char = curr_char;
         }
     }
 
@@ -80,7 +63,23 @@ osdna_error compress_core(OSDNA_ctx *ctx) {
 }
 
 osdna_error decompress_core(OSDNA_ctx *ctx) {
-    printf("decompress_core");
+    printf("Initializing compression core\n");
+
+    int bytesRead;
+    char file_read_buff[1024];
+
+    int print_counter = 0;
+    while (bytesRead = fread(file_read_buff, 1, 1024, ctx->read_stream)) {
+        if (print_counter % 1024 == 0) {
+            printf("Processed %d Mb\n", print_counter / 1024);
+        }
+        print_counter++;
+        for (int i = 0; i < bytesRead; i++) {
+            char curr_char = file_read_buff[i];
+
+        }
+    }
+
 
     return OSDNA_OK;
 }

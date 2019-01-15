@@ -25,7 +25,7 @@ osdna_bit_handler *osdna_bit_init(FILE *write_stream) {
     return ctx;
 }
 
-char get_bits_char(char c) {
+char get_bits_char(char c) { //Bits-pair encoding protocl
     if (c == 'A' || c == '0')
         return 0x00;
     if (c == 'C' || c == '1')

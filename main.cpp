@@ -5,10 +5,16 @@
 int main() {
     clock_t start = clock();
     OSDNA_ctx *ctx = osdna_init_ctx();
+    /* COMPRESSION
     osdna_set_direction(ctx, COMPRESSION);
-    osdna_set_input_file(ctx, "../human_g1k_v37.fasta");
-//    osdna_set_input_file(ctx, "../lambda_virus.dna");
+    osdna_set_input_file(ctx, "../lambda_virus.dna");
     osdna_set_output_file(ctx, "../lambda_virus.dna.osdna");
+*/
+
+    // DECOMPRESSION
+    osdna_set_direction(ctx, DECOMPRESSION);
+    osdna_set_input_file(ctx, "../lambda_virus.dna.osdna");
+    osdna_set_output_file(ctx, "../lambda_virus.dna.decompressed");
 
     osdna_error status = osdna_process(ctx);
 

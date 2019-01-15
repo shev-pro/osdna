@@ -3,6 +3,10 @@
 
 #include <cstdio>
 
+/**
+ * OSDNA COMPRESSOR PIMPL INTERFACE
+ */
+
 enum direct {
     COMPRESSION, DECOMPRESSION
 };
@@ -18,7 +22,6 @@ struct OSDNA_ctx {
     FILE *read_stream = NULL;
     FILE *write_stream = NULL;
 };
-
 OSDNA_ctx *osdna_init_ctx();
 
 osdna_error osdna_set_input_file(OSDNA_ctx *ctx, const char *input_file);
