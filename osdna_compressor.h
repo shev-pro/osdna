@@ -29,6 +29,8 @@ osdna_error osdna_set_direction(OSDNA_ctx *ctx, direct direction);
 
 osdna_error osdna_process(OSDNA_ctx *ctx);
 
+osdna_error osdna_print_statistic(OSDNA_ctx *ctx);
+
 void osdna_free_ctx(OSDNA_ctx *ctx);
 
 #endif //OSDNA_OSDNA_COMPRESSOR_H

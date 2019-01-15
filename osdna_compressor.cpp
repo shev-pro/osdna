@@ -41,6 +41,26 @@ osdna_error osdna_process(OSDNA_ctx *ctx) {
     }
 }
 
+osdna_error osdna_print_statistic(OSDNA_ctx *ctx) {
+    FILE *src = fopen(ctx->input_file, "rb");
+    FILE *dest = fopen(ctx->output_file, "rb");
+    fseek(src, 0L, SEEK_END);
+    fseek(dest, 0L, SEEK_END);
+
+    //TODO handle errors
+
+    float ssize = ftell(src);
+    float dsize = ftell(dest);
+
+    fclose(src);
+    fclose(dest);
+
+    float ratio = (ssize - dsize) / ssize;
+    printf("Source file size %f bytes, Destination file size %f bytes. Compression ratio: %f% \n", ssize, dsize, ratio);
+
+    return OSDNA_OK;
+}
+
 void osdna_free_ctx(OSDNA_ctx *ctx) {
     if (ctx->read_stream != NULL) {
         fclose(ctx->read_stream);
