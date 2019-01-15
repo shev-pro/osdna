@@ -69,10 +69,10 @@ osdna_error write_window(osdna_bit_handler *handler, bool forced) {
 }
 
 osdna_error osdna_bitwriter_finilize(osdna_bit_handler *handle) {
-    printf("Cache: \n");
-    for (int i = 0; i < WRITE_BUFFER_SIZE; i++) {
-        printf("Pos: %d = %c%c %c%c %c%c %c%c\n", i, BYTE_TO_BINARY(handle->write_buffer[i]));
-    }
+//    printf("Cache: \n");
+//    for (int i = 0; i < WRITE_BUFFER_SIZE; i++) {
+//        printf("Pos: %d = %c%c %c%c %c%c %c%c\n", i, BYTE_TO_BINARY(handle->write_buffer[i]));
+//    }
     if (handle->bit_position != 0) {
         printf("Da vedere il padding");
     } else {

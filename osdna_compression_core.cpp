@@ -5,7 +5,7 @@
 #define TRIGGER_SIZE 3
 
 osdna_error compress_core(OSDNA_ctx *ctx) {
-    printf("compress_core");
+    printf("compress_core\n");
 
     int bytesRead;
     char file_read_buff[1024];
@@ -19,6 +19,7 @@ osdna_error compress_core(OSDNA_ctx *ctx) {
             curr_char = file_read_buff[i];
             if (!is_acceptable_char(curr_char))  // are acceptable only AGCT, everything else is skipped
                 continue;
+
             osdna_bit_write_char(bit_write_handle, curr_char);
         }
     }
