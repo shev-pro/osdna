@@ -9,8 +9,8 @@
 
 #define WRITE_BUFFER_SIZE 1024
 
-struct osdna_bit_handler {
-    FILE *write_stream = NULL;
+struct osdna_bit_write_handler {
+    FILE *write_stream;
     char write_buffer[WRITE_BUFFER_SIZE];
     short bit_position;
     short buffer_position;
@@ -22,7 +22,7 @@ struct osdna_bit_handler {
  * @param write_stream opened FP to writing stream, MUST be opened as binary eg wb or wb+
  * @return ctx
  */
-osdna_bit_handler *osdna_bit_init(FILE *write_stream);
+osdna_bit_write_handler *osdna_bit_init(FILE *write_stream);
 
 /**
  * Writes single char c to file in binary rappresentation.
@@ -34,14 +34,14 @@ osdna_bit_handler *osdna_bit_init(FILE *write_stream);
  * @param c char to write one of AGCT0123
  * @return error
  */
-osdna_error osdna_bit_write_char(osdna_bit_handler *handle, char c);
+osdna_error osdna_bit_write_char(osdna_bit_write_handler *handle, char c);
 
 /**
  * Finilizes writing handle dumping all memory saved data and removes everything
  * @param handle
  * @return
  */
-osdna_error osdna_bitwriter_finilize(osdna_bit_handler *handle);
+osdna_error osdna_bitwriter_finilize(osdna_bit_write_handler *handle);
 
 
 #endif //OSDNA_OSDNA_BITWRITER_H

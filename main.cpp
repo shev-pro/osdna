@@ -5,13 +5,15 @@
 int main() {
     clock_t start = clock();
     OSDNA_ctx *ctx = osdna_init_ctx();
-    /* COMPRESSION
-    osdna_set_direction(ctx, COMPRESSION);
-    osdna_set_input_file(ctx, "../lambda_virus.dna");
-    osdna_set_output_file(ctx, "../lambda_virus.dna.osdna");
-*/
+    /* COMPRESSION */
+//    osdna_set_direction(ctx, COMPRESSION);
+//    osdna_set_input_file(ctx, "../lambda_virus.dna");
+//    osdna_set_output_file(ctx, "../lambda_virus.dna.osdna");
 
-    // DECOMPRESSION
+
+
+
+    /* DECOMPRESSION */
     osdna_set_direction(ctx, DECOMPRESSION);
     osdna_set_input_file(ctx, "../lambda_virus.dna.osdna");
     osdna_set_output_file(ctx, "../lambda_virus.dna.decompressed");
@@ -20,6 +22,8 @@ int main() {
 
     if (status != OSDNA_OK) {
         printf("We have an error %d", status);
+    } else {
+        printf("\nFinished decompression :) \n");
     }
 
     osdna_print_statistic(ctx);

@@ -14,10 +14,10 @@
   (byte & 0x02 ? '1' : '0'), \
   (byte & 0x01 ? '1' : '0')
 
-osdna_error write_window(osdna_bit_handler *handler, bool forced = false);
+osdna_error write_window(osdna_bit_write_handler *handler, bool forced = false);
 
-osdna_bit_handler *osdna_bit_init(FILE *write_stream) {
-    osdna_bit_handler *ctx = (osdna_bit_handler *) malloc(sizeof(osdna_bit_handler));
+osdna_bit_write_handler *osdna_bit_init(FILE *write_stream) {
+    osdna_bit_write_handler *ctx = (osdna_bit_write_handler *) malloc(sizeof(osdna_bit_write_handler));
     ctx->current_window = 0x00;
     ctx->bit_position = 0;
     ctx->buffer_position = 0;
@@ -36,7 +36,7 @@ char get_bits_char(char c) { //Bits-pair encoding protocl
         return 0x03;
 }
 
-osdna_error osdna_bit_write_char(osdna_bit_handler *handle, char c) {
+osdna_error osdna_bit_write_char(osdna_bit_write_handler *handle, char c) {
     char bitchar = get_bits_char(c);
 //    printf("%c", c);
 
@@ -55,7 +55,7 @@ osdna_error osdna_bit_write_char(osdna_bit_handler *handle, char c) {
     }
 }
 
-osdna_error write_window(osdna_bit_handler *handler, bool forced) {
+osdna_error write_window(osdna_bit_write_handler *handler, bool forced) {
     handler->write_buffer[handler->buffer_position] = handler->current_window;
     handler->buffer_position++;
     if (handler->buffer_position >= WRITE_BUFFER_SIZE || forced) {
@@ -69,7 +69,7 @@ osdna_error write_window(osdna_bit_handler *handler, bool forced) {
     return OSDNA_OK;
 }
 
-osdna_error osdna_bitwriter_finilize(osdna_bit_handler *handle) {
+osdna_error osdna_bitwriter_finilize(osdna_bit_write_handler *handle) {
 //    printf("Cache: \n");
 //    for (int i = 0; i < WRITE_BUFFER_SIZE; i++) {
 //        printf("Pos: %d = %c%c %c%c %c%c %c%c\n", i, BYTE_TO_BINARY(handle->write_buffer[i]));
