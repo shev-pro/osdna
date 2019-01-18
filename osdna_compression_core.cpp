@@ -68,47 +68,45 @@ osdna_error decompress_core(OSDNA_ctx *ctx) {
 
     osdna_bit_read_handler *handler = osdna_bit_read_init(ctx->read_stream);
     char current_char = 'Q';
-    osdna_error error = OSDNA_OK;
-    char prev_char = 'Q';
-    int last_seq = 1;
-    bool reading_seq = false;
-    while ((error = osdna_bit_read_char(handler, &current_char)) == OSDNA_OK) {
-        if (reading_seq) {
-            reading_seq = false;
-            last_seq = 1;
-            // Crazy code start
-            if (current_char == 'C') {
-                printf("%c", prev_char);
+    char last_char = 'Q';
+    char padded_char = 0x00;
+    int occ_len = 0;
+    int occ = 0;
+    int write_pointer = 0;
+    long file_pointer = 0;
+    char file_write_buff[1024];
+
+    while (osdna_bit_read_char(handler, &current_char) != OSDNA_EOF){
+        file_pointer++;
+        if(occ_len == TRIGGER_SIZE){
+            occ = get_occ_from_char(current_char);
+            if(occ != 3) occ_len = 0;
+            for(int j = 0; j < occ; j++){
+                file_write_buff[write_pointer++] = last_char;
+                if(write_pointer % 1024 == 0){
+                    fwrite(file_write_buff, 1, 1024, ctx->write_stream);
+                    write_pointer = 0;
+                }
             }
-            if (current_char == 'G') {
-                printf("%c", prev_char);
-                printf("%c", prev_char);
-            }
-            if (current_char == 'T') {
-                printf("%c", prev_char);
-                printf("%c", prev_char);
-                printf("%c", prev_char);
-                reading_seq = true;
-            }
-            // Crazy code end
-            continue;
+        } else if(last_char == current_char){
+            occ_len++;
+            file_write_buff[write_pointer++] = last_char;
         }
-        if (last_seq == 3) {
-            reading_seq = true;
-            continue;
+        else{
+            occ_len = 1;
+            last_char = current_char;
+            file_write_buff[write_pointer++] = last_char;
         }
-        if (prev_char == current_char) {
-            last_seq++;
-            printf("%c", current_char);
-        } else {
-            printf("%c", current_char);
+
+        /*PADDING MANAGEMENT*/
+        /*
+         * if is the padded byte read the next else
+         */
+        if(write_pointer % 1024 == 0){
+            fwrite(file_write_buff, 1, 1024, ctx->write_stream);
+            write_pointer = 0;
         }
-        prev_char = current_char;
     }
-    if (error == OSDNA_EOF) { // if end of file we finished here!
-        return OSDNA_OK;
-    } else {
-        return error;
-    }
+
 }
 

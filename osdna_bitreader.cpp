@@ -20,7 +20,7 @@ osdna_bit_read_handler *osdna_bit_read_init(FILE *read_stream) {
     ctx->read_stream = read_stream;
 
     fseek(ctx->read_stream, 0L, SEEK_END);
-    ctx->bytes_to_read = ftell(ctx->read_stream) - 2;
+    ctx->bytes_to_read = ftell(ctx->read_stream) - 1;
     fseek(ctx->read_stream, 0L, SEEK_SET);
 
     return ctx;
@@ -39,6 +39,17 @@ char get_char_from_bits(char c) { //Bits-pair encoding protocl
     if (c == 0x03) {
         return 'T'; //3
     }
+}
+
+int get_occ_from_char(char c){
+    if(c == 'A')
+        return 0;
+    if(c == 'C')
+        return 1;
+    if(c == 'G')
+        return 2;
+    if(c == 'T')
+        return 3;
 }
 
 osdna_error osdna_bit_read_char(osdna_bit_read_handler *handle, char *c) {
