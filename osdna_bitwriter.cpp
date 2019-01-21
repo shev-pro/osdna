@@ -59,8 +59,8 @@ osdna_error write_window(osdna_bit_write_handler *handler, bool forced) {
     handler->write_buffer[handler->buffer_position] = handler->current_window;
     handler->buffer_position++;
     if (handler->buffer_position >= WRITE_BUFFER_SIZE || forced) {
-        int wrote_bytes = fwrite(handler->write_buffer, 1, handler->buffer_position - 1, handler->write_stream);
-        if (wrote_bytes != handler->buffer_position - 1) {
+        int wrote_bytes = fwrite(handler->write_buffer, 1, handler->buffer_position, handler->write_stream);
+        if (wrote_bytes != handler->buffer_position) {
             return OSDNA_IO_ERROR;
         }
         handler->buffer_position = 0;
@@ -81,6 +81,7 @@ osdna_error osdna_bitwriter_finilize(osdna_bit_write_handler *handle) {
         }
 
         handle->current_window = (unsigned char) bits_to_fill;
+        handle->bit_position = 0;
     }
 
     osdna_error error = write_window(handle, true);
