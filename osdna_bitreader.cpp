@@ -16,11 +16,12 @@ osdna_bit_read_handler *osdna_bit_read_init(FILE *read_stream) {
     osdna_bit_read_handler *ctx = (osdna_bit_read_handler *) malloc(sizeof(osdna_bit_read_handler));
     ctx->current_window = 0x00;
     ctx->bit_position = 0;
-    ctx->buffer_to_read = 0;
+    ctx->current_read_buffer_size = 0;
     ctx->read_stream = read_stream;
+    ctx->current_buffer_read_pos = 0;
 
     fseek(ctx->read_stream, 0L, SEEK_END);
-    ctx->bytes_to_read = ftell(ctx->read_stream) - 1;
+    ctx->bytes_to_read = ftell(ctx->read_stream) - 2;
     fseek(ctx->read_stream, 0L, SEEK_SET);
 
     return ctx;
@@ -41,14 +42,14 @@ char get_char_from_bits(char c) { //Bits-pair encoding protocl
     }
 }
 
-int get_occ_from_char(char c){
-    if(c == 'A')
+int get_occ_from_char(char c) {
+    if (c == 'A')
         return 0;
-    if(c == 'C')
+    if (c == 'C')
         return 1;
-    if(c == 'G')
+    if (c == 'G')
         return 2;
-    if(c == 'T')
+    if (c == 'T')
         return 3;
 }
 
@@ -60,21 +61,21 @@ osdna_error osdna_bit_read_char(osdna_bit_read_handler *handle, char *c) {
         *c = get_char_from_bits(mask);
         return OSDNA_OK;
     } else { // finished current window
-        if (handle->buffer_to_read > 0) {
-//            printf("reading next window %d\n", handle->buffer_to_read);
-            handle->current_window = handle->read_buffer[READ_BUFFER_SIZE - handle->buffer_to_read];
-            handle->buffer_to_read--;
+        if (handle->current_read_buffer_size > 0) {
+//            printf("reading next window %d\n", handle->current_read_buffer_size);
+            handle->current_window = handle->read_buffer[READ_BUFFER_SIZE - handle->current_read_buffer_size];
+            handle->current_read_buffer_size--;
             handle->bit_position = 8;
             return osdna_bit_read_char(handle, c);
         } else {
-            handle->buffer_to_read = fread(handle->read_buffer, 1, READ_BUFFER_SIZE, handle->read_stream);
-//            printf("reading next buffer %d\n", handle->buffer_to_read);
-            if (handle->buffer_to_read == 0) {
+            handle->current_read_buffer_size = fread(handle->read_buffer, 1, READ_BUFFER_SIZE, handle->read_stream);
+//            printf("reading next buffer %d\n", handle->current_read_buffer_size);
+            if (handle->current_read_buffer_size == 0) { //TODO CONTINUE HERE
                 return OSDNA_EOF;
             } else {
-                handle->current_window = handle->read_buffer[READ_BUFFER_SIZE - handle->buffer_to_read];
+                handle->current_window = handle->read_buffer[handle->current_buffer_read_pos];
                 handle->bit_position = 8;
-                handle->buffer_to_read--;
+                handle->current_read_buffer_size--;
                 return osdna_bit_read_char(handle, c);
             }
         }
