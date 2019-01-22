@@ -5,6 +5,8 @@
 
 #define TRIGGER_SIZE 3
 
+void dump_occurence(char curr_char, int last_occ_len, osdna_bit_write_handler *bit_write_handle);
+
 osdna_error compress_core(OSDNA_ctx *ctx) {
     printf("Initializing compression core\n");
 
@@ -38,29 +40,36 @@ osdna_error compress_core(OSDNA_ctx *ctx) {
                     osdna_bit_write_char(bit_write_handle, curr_char);
                     last_occ_len = 1;
                 } else {
-                    last_occ_len -= 3;
-                    while (last_occ_len >= 3) {
-                        osdna_bit_write_char(bit_write_handle, '3');
-                        last_occ_len -= 3;
-                    }
-                    if (last_occ_len == 2) {
-                        osdna_bit_write_char(bit_write_handle, '2');
-                    }
-                    if (last_occ_len == 1) {
-                        osdna_bit_write_char(bit_write_handle, '1');
-                    }
-                    if (last_occ_len == 0) {
-                        osdna_bit_write_char(bit_write_handle, '0');
-                    }
+                    dump_occurence(curr_char, last_occ_len, bit_write_handle);
                     last_occ_len = 1;
-                    osdna_bit_write_char(bit_write_handle, curr_char);
                 }
             }
             last_char = curr_char;
         }
     }
+    if (last_occ_len > 1) {
+        dump_occurence(curr_char, last_occ_len-1, bit_write_handle);
+    }
 
     return osdna_bitwriter_finilize(bit_write_handle);
+}
+
+void dump_occurence(char curr_char, int last_occ_len, osdna_bit_write_handler *bit_write_handle) {
+    last_occ_len -= 3;
+    while (last_occ_len >= 3) {
+        osdna_bit_write_char(bit_write_handle, '3');
+        last_occ_len -= 3;
+    }
+    if (last_occ_len == 2) {
+        osdna_bit_write_char(bit_write_handle, '2');
+    }
+    if (last_occ_len == 1) {
+        osdna_bit_write_char(bit_write_handle, '1');
+    }
+    if (last_occ_len == 0) {
+        osdna_bit_write_char(bit_write_handle, '0');
+    }
+    osdna_bit_write_char(bit_write_handle, curr_char);
 }
 
 osdna_error decompress_core(OSDNA_ctx *ctx) {
