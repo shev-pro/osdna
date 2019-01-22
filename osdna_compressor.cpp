@@ -8,6 +8,7 @@ osdna_error preflight_checks(OSDNA_ctx *ctx);
 
 OSDNA_ctx *osdna_init_ctx() {
     OSDNA_ctx *ctx = (OSDNA_ctx *) malloc(sizeof(OSDNA_ctx));
+    ctx->out_buff_pos = 0;
     return ctx;
 }
 

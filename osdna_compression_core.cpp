@@ -7,6 +7,10 @@
 
 void dump_occurence(char curr_char, int last_occ_len, osdna_bit_write_handler *bit_write_handle);
 
+osdna_error write_char(OSDNA_ctx *ctx, char c, bool forced = false);
+
+int char_to_count(char c);
+
 osdna_error compress_core(OSDNA_ctx *ctx) {
     printf("Initializing compression core\n");
 
@@ -48,7 +52,7 @@ osdna_error compress_core(OSDNA_ctx *ctx) {
         }
     }
     if (last_occ_len > 1) {
-        dump_occurence(curr_char, last_occ_len-1, bit_write_handle);
+        dump_occurence(curr_char, last_occ_len - 1, bit_write_handle);
     }
 
     return osdna_bitwriter_finilize(bit_write_handle);
@@ -85,30 +89,32 @@ osdna_error decompress_core(OSDNA_ctx *ctx) {
         if (reading_seq) {
             reading_seq = false;
             last_seq = 1;
-            // Crazy code start
-            if (current_char == 'C') {
-                printf("%c", prev_char);
+            int iter_count = char_to_count(current_char);
+            for (int i = 0; i < iter_count; i++) {
+//                printf("%c", prev_char);
+                error = write_char(ctx, prev_char);
+                if (error != OSDNA_OK) {
+                    return error;
+                }
             }
-            if (current_char == 'G') {
-                printf("%c", prev_char);
-                printf("%c", prev_char);
-            }
-            if (current_char == 'T') {
-                printf("%c", prev_char);
-                printf("%c", prev_char);
-                printf("%c", prev_char);
+            if (iter_count == 3) {
                 reading_seq = true;
             }
-            // Crazy code end
             continue;
         }
 
         if (prev_char == current_char) {
             last_seq++;
-            printf("%c", current_char);
+            error = write_char(ctx, current_char);
+            if (error != OSDNA_OK) {
+                return error;
+            }
         } else {
             last_seq = 1;
-            printf("%c", current_char);
+            error = write_char(ctx, current_char);
+            if (error != OSDNA_OK) {
+                return error;
+            }
         }
         prev_char = current_char;
 
@@ -120,9 +126,32 @@ osdna_error decompress_core(OSDNA_ctx *ctx) {
 
     }
     if (error == OSDNA_EOF) { // if end of file we finished here!
-        return OSDNA_OK;
+        return write_char(ctx, prev_char, true);
     } else {
         return error;
     }
 }
 
+int char_to_count(char c) {
+    if (c == 'A')
+        return 0;
+    if (c == 'C')
+        return 1;
+    if (c == 'G')
+        return 2;
+    if (c == 'T')
+        return 3;
+}
+
+osdna_error write_char(OSDNA_ctx *ctx, char c, bool forced) {
+    if (ctx->out_buff_pos == 4096 - 1 || forced) {
+        int bytes = fwrite(ctx->output_buffer, 1, ctx->out_buff_pos, ctx->write_stream);
+        if (bytes != ctx->out_buff_pos) {
+            return OSDNA_IO_ERROR;
+        }
+        ctx->out_buff_pos = 0;
+    }
+    ctx->output_buffer[ctx->out_buff_pos] = c;
+    ctx->out_buff_pos++;
+    return OSDNA_OK;
+}

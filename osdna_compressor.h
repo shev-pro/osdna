@@ -22,6 +22,8 @@ struct OSDNA_ctx {
     direct direction = COMPRESSION;
     FILE *read_stream = NULL;
     FILE *write_stream = NULL;
+    char output_buffer[4096];
+    int out_buff_pos;
 };
 OSDNA_ctx *osdna_init_ctx();
 
