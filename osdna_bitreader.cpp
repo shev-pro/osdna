@@ -26,7 +26,7 @@ osdna_bit_read_handler *osdna_bit_read_init(FILE *read_stream) {
     ctx->last_window = false;
 
     fseek(ctx->read_stream, 0L, SEEK_END);
-    ctx->bytes_to_read = ftell(ctx->read_stream);
+    ctx->file_bytes_remaining = ftell(ctx->read_stream);
     fseek(ctx->read_stream, 0L, SEEK_SET);
 
     return ctx;
@@ -79,37 +79,77 @@ osdna_error read_char_from_window(osdna_bit_read_handler *handle, char *c) {
 }
 
 osdna_error read_next_window(osdna_bit_read_handler *handle, char *c) {
-    if (handle->to_read_buff_size > 0) { // There are other data in cache
-        handle->current_buffer_read_pos++;
-        handle->current_window = handle->read_buffer[handle->current_buffer_read_pos];
-
-        handle->to_read_buff_size--;
-        handle->bit_position = 8;
-        return OSDNA_OK;
-    } else {
+    if (handle->file_bytes_remaining == 2) { // A very, very special case
         handle->to_read_buff_size = fread(handle->read_buffer, 1, READ_BUFFER_SIZE, handle->read_stream);
-        handle->bytes_to_read = handle->bytes_to_read - handle->to_read_buff_size;
-        if (handle->bytes_to_read == 0) { // Last slice was read from file
-            // Substract 2 bytes from the end for padding handling
-            handle->to_read_buff_size = handle->to_read_buff_size - 2;
-        } else {
-            handle->current_buffer_read_pos = 0;
+        handle->to_read_buff_size = handle->to_read_buff_size - 2;
+        if (handle->to_read_buff_size != 0) {
+            return OSDNA_IO_ERROR;
         }
-        if (handle->to_read_buff_size <= 0 || handle->last_window) {
-            // Non ci dimentichiamo che abbiamo altri belli 2 byte da leggere!
-            int bits = handle->read_buffer[handle->current_buffer_read_pos + 2];
-            handle->bit_position = 8 - bits;
-            handle->current_window = handle->read_buffer[handle->current_buffer_read_pos + 1];
-            if (handle->last_window) {
-                return OSDNA_EOF;
-            }
-            handle->last_window = true;
-            return OSDNA_OK;
-        } else {
+        handle->current_window = handle->read_buffer[handle->current_buffer_read_pos];
+        handle->current_buffer_read_pos++;
+        handle->bit_position = 8 - handle->read_buffer[handle->current_buffer_read_pos];
+        handle->file_bytes_remaining = 0;
+        return OSDNA_OK;
+    }
+    if (handle->to_read_buff_size <= 0) {
+        if (handle->last_window) {
             handle->current_window = handle->read_buffer[handle->current_buffer_read_pos];
-            handle->bit_position = 8;
-            handle->to_read_buff_size--;
+            handle->current_buffer_read_pos++;
+            handle->bit_position = 8 - handle->read_buffer[handle->current_buffer_read_pos];
+            handle->last_window = false;
             return OSDNA_OK;
+        }
+        if (handle->file_bytes_remaining <= 0) {
+            return OSDNA_EOF;
+        }
+        handle->to_read_buff_size = fread(handle->read_buffer, 1, READ_BUFFER_SIZE, handle->read_stream);
+        handle->file_bytes_remaining = handle->file_bytes_remaining - handle->to_read_buff_size;
+        if (handle->file_bytes_remaining == 0) {
+            // Last slice
+            handle->to_read_buff_size = handle->to_read_buff_size - 2;
+            handle->last_window = true;
         }
     }
+    handle->current_window = handle->read_buffer[handle->current_buffer_read_pos];
+    handle->current_buffer_read_pos++;
+    handle->to_read_buff_size--;
+    handle->bit_position = 8;
+    return OSDNA_OK;
 }
+
+//osdna_error read_next_window(osdna_bit_read_handler *handle, char *c) {
+//    if (handle->to_read_buff_size > 0) { // There are other data in cache
+//        handle->current_buffer_read_pos++;
+//        handle->current_window = handle->read_buffer[handle->current_buffer_read_pos];
+//
+//        handle->to_read_buff_size--;
+//        handle->bit_position = 8;
+//        return OSDNA_OK;
+//    } else {
+//        handle->to_read_buff_size = fread(handle->read_buffer, 1, READ_BUFFER_SIZE, handle->read_stream);
+//        handle->file_bytes_remaining = handle->file_bytes_remaining - handle->to_read_buff_size;
+//
+//        if (handle->file_bytes_remaining == 0) { // Last slice was read from file
+//            // Substract 2 bytes from the end for padding handling
+//            handle->to_read_buff_size = handle->to_read_buff_size - 2;
+//        } else {
+//            handle->current_buffer_read_pos = 0;
+//        }
+//        if (handle->to_read_buff_size <= 0 || handle->last_window) {
+//            // Non ci dimentichiamo che abbiamo altri belli 2 byte da leggere!
+//            int bits = handle->read_buffer[handle->current_buffer_read_pos + 1];
+//            handle->bit_position = 8 - bits;
+//            handle->current_window = handle->read_buffer[handle->current_buffer_read_pos];
+//            if (handle->last_window) {
+//                return OSDNA_EOF;
+//            }
+//            handle->last_window = true;
+//            return OSDNA_OK;
+//        } else {
+//            handle->current_window = handle->read_buffer[handle->current_buffer_read_pos];
+//            handle->bit_position = 8;
+//            handle->to_read_buff_size--;
+//            return OSDNA_OK;
+//        }
+//    }
+//}

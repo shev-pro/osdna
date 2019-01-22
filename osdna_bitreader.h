@@ -14,7 +14,7 @@ struct osdna_bit_read_handler {
     long to_read_buff_size;
     long current_buffer_read_pos;
     char current_window;
-    long bytes_to_read;
+    long file_bytes_remaining;
     bool last_window;
 };
 
