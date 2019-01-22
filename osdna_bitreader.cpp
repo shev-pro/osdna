@@ -12,16 +12,21 @@
   (byte & 0x02 ? '1' : '0'), \
   (byte & 0x01 ? '1' : '0')
 
+osdna_error read_next_window(osdna_bit_read_handler *handle, char *c);
+
+osdna_error read_char_from_window(osdna_bit_read_handler *pHandler, char *c);
+
 osdna_bit_read_handler *osdna_bit_read_init(FILE *read_stream) {
     osdna_bit_read_handler *ctx = (osdna_bit_read_handler *) malloc(sizeof(osdna_bit_read_handler));
     ctx->current_window = 0x00;
     ctx->bit_position = 0;
-    ctx->current_read_buffer_size = 0;
+    ctx->to_read_buff_size = 0;
     ctx->read_stream = read_stream;
     ctx->current_buffer_read_pos = 0;
+    ctx->last_window = false;
 
     fseek(ctx->read_stream, 0L, SEEK_END);
-    ctx->bytes_to_read = ftell(ctx->read_stream) - 2;
+    ctx->bytes_to_read = ftell(ctx->read_stream);
     fseek(ctx->read_stream, 0L, SEEK_SET);
 
     return ctx;
@@ -55,33 +60,56 @@ int get_occ_from_char(char c) {
 
 osdna_error osdna_bit_read_char(osdna_bit_read_handler *handle, char *c) {
     if (handle->bit_position > 0) {
-        char mask = (handle->current_window & 0xc0) >> 6;  //takes first 2 bits and shifts right
-        handle->current_window = (handle->current_window << 2);
-        handle->bit_position = handle->bit_position - 2;
-        *c = get_char_from_bits(mask);
-//        printf(BYTE_TO_BINARY_PATTERN, BYTE_TO_BINARY(handle->current_window));
-        return OSDNA_OK;
+        return read_char_from_window(handle, c);
     } else { // finished current window
-        if (handle->current_read_buffer_size > 0) {
-//            printf("reading next window %d\n", handle->current_read_buffer_size);
-            handle->current_buffer_read_pos++;
-            handle->current_window = handle->read_buffer[handle->current_buffer_read_pos];
-
-            handle->current_read_buffer_size--;
-            handle->bit_position = 8;
-            return osdna_bit_read_char(handle, c);
+        osdna_error status = read_next_window(handle, c);
+        if (status != OSDNA_OK) {
+            return status;
         } else {
-            handle->current_read_buffer_size = fread(handle->read_buffer, 1, READ_BUFFER_SIZE, handle->read_stream);
+            return read_char_from_window(handle, c);
+        }
+    }
+}
+
+osdna_error read_char_from_window(osdna_bit_read_handler *handle, char *c) {
+    char mask = (handle->current_window & 0xc0) >> 6;  //takes first 2 bits and shifts right
+    handle->current_window = (handle->current_window << 2);
+    handle->bit_position = handle->bit_position - 2;
+    *c = get_char_from_bits(mask);
+}
+
+osdna_error read_next_window(osdna_bit_read_handler *handle, char *c) {
+    if (handle->to_read_buff_size > 0) { // There are other data in cache
+        handle->current_buffer_read_pos++;
+        handle->current_window = handle->read_buffer[handle->current_buffer_read_pos];
+
+        handle->to_read_buff_size--;
+        handle->bit_position = 8;
+        return OSDNA_OK;
+    } else {
+        handle->to_read_buff_size = fread(handle->read_buffer, 1, READ_BUFFER_SIZE, handle->read_stream);
+        handle->bytes_to_read = handle->bytes_to_read - handle->to_read_buff_size;
+        if (handle->bytes_to_read == 0) { // Last slice was read from file
+            // Substract 2 bytes from the end for padding handling
+            handle->to_read_buff_size = handle->to_read_buff_size - 2;
+        } else {
             handle->current_buffer_read_pos = 0;
-//            printf("reading next buffer %d\n", handle->current_read_buffer_size);
-            if (handle->current_read_buffer_size == 0) {
+        }
+        if (handle->to_read_buff_size <= 0 || handle->last_window) {
+            // Non ci dimentichiamo che abbiamo altri belli 2 byte da leggere!
+            int bits = handle->read_buffer[handle->current_buffer_read_pos + 2];
+            handle->bit_position = 8 - bits;
+            handle->current_window = handle->read_buffer[handle->current_buffer_read_pos + 1];
+            if (handle->last_window) {
                 return OSDNA_EOF;
-            } else {
-                handle->current_window = handle->read_buffer[handle->current_buffer_read_pos];
-                handle->bit_position = 8;
-                handle->current_read_buffer_size--;
-                return osdna_bit_read_char(handle, c);
             }
+            handle->last_window = true;
+            return OSDNA_OK;
+        } else {
+            handle->current_window = handle->read_buffer[handle->current_buffer_read_pos];
+            handle->bit_position = 8;
+            handle->to_read_buff_size--;
+            return OSDNA_OK;
         }
     }
 }

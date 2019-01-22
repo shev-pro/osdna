@@ -11,10 +11,11 @@ struct osdna_bit_read_handler {
     FILE *read_stream;
     char read_buffer[READ_BUFFER_SIZE];
     short bit_position;
-    long current_read_buffer_size;
+    long to_read_buff_size;
     long current_buffer_read_pos;
     char current_window;
     long bytes_to_read;
+    bool last_window;
 };
 
 osdna_bit_read_handler *osdna_bit_read_init(FILE *read_stream);
