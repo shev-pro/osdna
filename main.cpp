@@ -45,7 +45,7 @@ int test(char *test_file) {
         printf("\nFinished decompression :) \n");
     }
 
-    osdna_print_statistic(ctx);
+//    osdna_print_statistic(ctx);
 
     if (ctx) {
         osdna_free_ctx(ctx);
@@ -75,8 +75,8 @@ int test(char *test_file) {
         finally:
         fclose(f1);
         fclose(f2);
-        remove(compressed_f);
-        remove(decompressed_f);
+//        remove(compressed_f);
+//        remove(decompressed_f);
     } else {
         printf("1. File sizes are not the same. Epic fail!\n");
     }
@@ -125,6 +125,7 @@ int main() {
         osdna_free_ctx(ctx);
         ctx = NULL;
     }
+//    test("../lambda_virus.dna");
     clock_t end = clock();
     float seconds = (float) (end - start) / CLOCKS_PER_SEC;
     printf("Time needed %f sec", seconds);

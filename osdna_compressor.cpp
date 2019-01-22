@@ -64,9 +64,11 @@ osdna_error osdna_print_statistic(OSDNA_ctx *ctx) {
 
 void osdna_free_ctx(OSDNA_ctx *ctx) {
     if (ctx->read_stream != NULL) {
+        fflush(ctx->read_stream);
         fclose(ctx->read_stream);
     }
     if (ctx->write_stream != NULL) {
+        fflush(ctx->write_stream);
         fclose(ctx->write_stream);
     }
     free(ctx);

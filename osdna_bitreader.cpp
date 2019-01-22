@@ -76,6 +76,7 @@ osdna_error read_char_from_window(osdna_bit_read_handler *handle, char *c) {
     handle->current_window = (handle->current_window << 2);
     handle->bit_position = handle->bit_position - 2;
     *c = get_char_from_bits(mask);
+    return OSDNA_OK;
 }
 
 osdna_error read_next_window(osdna_bit_read_handler *handle, char *c) {
