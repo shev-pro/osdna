@@ -59,18 +59,22 @@ osdna_error osdna_bit_read_char(osdna_bit_read_handler *handle, char *c) {
         handle->current_window = (handle->current_window << 2);
         handle->bit_position = handle->bit_position - 2;
         *c = get_char_from_bits(mask);
+//        printf(BYTE_TO_BINARY_PATTERN, BYTE_TO_BINARY(handle->current_window));
         return OSDNA_OK;
     } else { // finished current window
         if (handle->current_read_buffer_size > 0) {
 //            printf("reading next window %d\n", handle->current_read_buffer_size);
-            handle->current_window = handle->read_buffer[READ_BUFFER_SIZE - handle->current_read_buffer_size];
+            handle->current_buffer_read_pos++;
+            handle->current_window = handle->read_buffer[handle->current_buffer_read_pos];
+
             handle->current_read_buffer_size--;
             handle->bit_position = 8;
             return osdna_bit_read_char(handle, c);
         } else {
             handle->current_read_buffer_size = fread(handle->read_buffer, 1, READ_BUFFER_SIZE, handle->read_stream);
+            handle->current_buffer_read_pos = 0;
 //            printf("reading next buffer %d\n", handle->current_read_buffer_size);
-            if (handle->current_read_buffer_size == 0) { //TODO CONTINUE HERE
+            if (handle->current_read_buffer_size == 0) {
                 return OSDNA_EOF;
             } else {
                 handle->current_window = handle->read_buffer[handle->current_buffer_read_pos];

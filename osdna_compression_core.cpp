@@ -93,17 +93,22 @@ osdna_error decompress_core(OSDNA_ctx *ctx) {
             // Crazy code end
             continue;
         }
-        if (last_seq == 3) {
-            reading_seq = true;
-            continue;
-        }
+
         if (prev_char == current_char) {
             last_seq++;
             printf("%c", current_char);
         } else {
+            last_seq = 1;
             printf("%c", current_char);
         }
         prev_char = current_char;
+
+        if (last_seq == 3) {
+            reading_seq = true;
+            continue;
+        }
+
+
     }
     if (error == OSDNA_EOF) { // if end of file we finished here!
         return OSDNA_OK;
