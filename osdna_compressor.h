@@ -14,6 +14,7 @@ enum osdna_error {
     OSDNA_OK = 0,
     OSDNA_IO_ERROR,
     OSDNA_CONFIG_ERROR,
+    OSDNA_DATA_CHAR_ERROR,
     OSDNA_EOF
 };
 struct OSDNA_ctx {

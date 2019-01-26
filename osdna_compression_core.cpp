@@ -23,14 +23,15 @@ osdna_error compress_core(OSDNA_ctx *ctx) {
 
     int print_counter = 0;
     while (bytesRead = fread(file_read_buff, 1, 1024, ctx->read_stream)) {
-        if (print_counter % 1024 == 0) {
-            printf("Processed %d Mb\n", print_counter / 1024);
-        }
-        print_counter++;
+//        if (print_counter % 1024 == 0) {
+//            printf("Processed %d Mb\n", print_counter / 1024);
+//        }
+//        print_counter++;
         for (int i = 0; i < bytesRead; i++) {
             curr_char = file_read_buff[i];
             if (!is_acceptable_char(curr_char))  // are acceptable only AGCT, everything else is skipped
-                continue;
+                return OSDNA_DATA_CHAR_ERROR;
+//                continue;
 
             if (last_char == curr_char) {
                 if (last_occ_len < TRIGGER_SIZE) {
@@ -85,12 +86,12 @@ osdna_error decompress_core(OSDNA_ctx *ctx) {
     char prev_char = 'Q';
     int last_seq = 1;
     bool reading_seq = false;
-    int print_counter = 0;
+//    int print_counter = 0;
     while ((error = osdna_bit_read_char(handler, &current_char)) == OSDNA_OK) {
-        if (print_counter % 1024 == 0) {
+//        if (print_counter % 1024 == 0) {
 //            printf("Processed %d Mb\n", print_counter / 1024);
-        }
-        print_counter++;
+//        }
+//        print_counter++;
 
         if (reading_seq) {
             reading_seq = false;
@@ -153,7 +154,7 @@ int char_to_count(char c) {
 
 osdna_error write_char(OSDNA_ctx *ctx, char c, bool forced) {
     if (ctx->out_buff_pos == 4096 - 1 || forced) {
-        printf("%d\n", ctx->out_buff_pos);
+//        printf("%d\n", ctx->out_buff_pos);
         int bytes = fwrite(ctx->output_buffer, 1, ctx->out_buff_pos, ctx->write_stream);
         if (bytes != ctx->out_buff_pos) {
             return OSDNA_IO_ERROR;

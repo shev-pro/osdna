@@ -1,5 +1,6 @@
 #include <ctime>
 #include <cstring>
+#include <cstdlib>
 #include "OSdna.h"
 #include "osdna_bitwriter.h"
 
@@ -82,52 +83,79 @@ int test(char *test_file) {
     }
 }
 
-int main() {
+int main(int argc, char *argv[]) {
     clock_t start = clock();
+    if (argc != 4) {
+        printf("Usage: <C for compression or D for decompression> <input> <output>\n");
+        exit(-2);
+    }
     OSDNA_ctx *ctx = osdna_init_ctx();
-    /* COMPRESSION */
-    osdna_set_direction(ctx, COMPRESSION);
-    osdna_set_input_file(ctx, "../lambda_virus.dna");
-    osdna_set_output_file(ctx, "../lambda_virus.dna.osdna");
+    if (strncmp(argv[1], "C", 1) == 0) {
+        osdna_set_direction(ctx, COMPRESSION);
+    }
+    if (strncmp(argv[1], "D", 1) == 0) {
+        osdna_set_direction(ctx, DECOMPRESSION);
+    }
+
+    osdna_set_input_file(ctx, argv[2]);
+    osdna_set_output_file(ctx, argv[3]);
 
     osdna_error status = osdna_process(ctx);
 
-    if (status != OSDNA_OK) {
-        printf("We have an error %d", status);
-    } else {
-        printf("\nFinished decompression :) \n");
-    }
-
-    osdna_print_statistic(ctx);
-
-    if (ctx) {
-        osdna_free_ctx(ctx);
-        ctx = NULL;
-    }
-
-    ctx = osdna_init_ctx();
-    /* DECOMPRESSION */
-    osdna_set_direction(ctx, DECOMPRESSION);
-    osdna_set_input_file(ctx, "../lambda_virus.dna.osdna");
-    osdna_set_output_file(ctx, "../lambda_virus.dna.decompressed");
-
-    status = osdna_process(ctx);
-
-    if (status != OSDNA_OK) {
-        printf("We have an error %d", status);
-    } else {
-        printf("\nFinished decompression :) \n");
-    }
-
-    osdna_print_statistic(ctx);
-
-    if (ctx) {
-        osdna_free_ctx(ctx);
-        ctx = NULL;
-    }
-//    test("../lambda_virus.dna");
     clock_t end = clock();
     float seconds = (float) (end - start) / CLOCKS_PER_SEC;
-    printf("Time needed %f sec", seconds);
+    printf("Time needed %f sec\n", seconds);
+
+    if (status != OSDNA_OK) {
+        printf("Exited with code %d", status);
+    } else {
+        printf("\nOK\n");
+    }
+
+
+
+//    OSDNA_ctx *ctx = osdna_init_ctx();
+//    /* COMPRESSION */
+//    osdna_set_direction(ctx, COMPRESSION);
+//    osdna_set_input_file(ctx, "../lambda_virus.dna");
+//    osdna_set_output_file(ctx, "../lambda_virus.dna.osdna");
+//
+//    osdna_error status = osdna_process(ctx);
+//
+//    if (status != OSDNA_OK) {
+//        printf("We have an error %d", status);
+//    } else {
+//        printf("\nFinished decompression :) \n");
+//    }
+//
+//    osdna_print_statistic(ctx);
+//
+//    if (ctx) {
+//        osdna_free_ctx(ctx);
+//        ctx = NULL;
+//    }
+//
+//    ctx = osdna_init_ctx();
+//    /* DECOMPRESSION */
+//    osdna_set_direction(ctx, DECOMPRESSION);
+//    osdna_set_input_file(ctx, "../lambda_virus.dna.osdna");
+//    osdna_set_output_file(ctx, "../lambda_virus.dna.decompressed");
+//
+//    status = osdna_process(ctx);
+//
+//    if (status != OSDNA_OK) {
+//        printf("We have an error %d", status);
+//    } else {
+//        printf("\nFinished decompression :) \n");
+//    }
+//
+//    osdna_print_statistic(ctx);
+//
+//    if (ctx) {
+//        osdna_free_ctx(ctx);
+//        ctx = NULL;
+//    }
+//    test("../human_g1k_v37.fasta");
+
     return 0;
 }
