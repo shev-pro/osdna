@@ -105,6 +105,7 @@ osdna_error read_next_window(osdna_bit_read_handler *handle, char *c) {
         }
         handle->to_read_buff_size = fread(handle->read_buffer, 1, READ_BUFFER_SIZE, handle->read_stream);
         handle->file_bytes_remaining = handle->file_bytes_remaining - handle->to_read_buff_size;
+        handle->current_buffer_read_pos = 0;
         if (handle->file_bytes_remaining == 0) {
             // Last slice
             handle->to_read_buff_size = handle->to_read_buff_size - 2;

@@ -91,7 +91,6 @@ osdna_error decompress_core(OSDNA_ctx *ctx) {
 //            printf("Processed %d Mb\n", print_counter / 1024);
         }
         print_counter++;
-        printf("%c", current_char);
 
         if (reading_seq) {
             reading_seq = false;
@@ -113,12 +112,14 @@ osdna_error decompress_core(OSDNA_ctx *ctx) {
         if (prev_char == current_char) {
             last_seq++;
             error = write_char(ctx, current_char);
+//            printf("%c", current_char);
             if (error != OSDNA_OK) {
                 return error;
             }
         } else {
             last_seq = 1;
             error = write_char(ctx, current_char);
+//            printf("%c", current_char);
             if (error != OSDNA_OK) {
                 return error;
             }
@@ -151,7 +152,6 @@ int char_to_count(char c) {
 }
 
 osdna_error write_char(OSDNA_ctx *ctx, char c, bool forced) {
-//    printf("%c", c);
     if (ctx->out_buff_pos == 4096 - 1 || forced) {
         printf("%d\n", ctx->out_buff_pos);
         int bytes = fwrite(ctx->output_buffer, 1, ctx->out_buff_pos, ctx->write_stream);
