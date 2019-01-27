@@ -40,4 +40,6 @@ osdna_error osdna_print_statistic(OSDNA_ctx *ctx);
 
 void osdna_free_ctx(OSDNA_ctx *ctx);
 
+int opt_trigger_calc(FILE * read_stream);
+
 #endif //OSDNA_OSDNA_COMPRESSOR_H
