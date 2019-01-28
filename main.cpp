@@ -4,6 +4,109 @@
 #include "OSdna.h"
 #include "osdna_bitwriter.h"
 
+// C program to find Burrows Wheeler transform of
+// a given text
+#include<stdio.h>
+#include<string.h>
+#include<stdlib.h>
+
+// Structure to store data of a rotation
+struct rotation {
+    int index;
+    char *suffix;
+};
+
+// Compares the rotations and
+// sorts the rotations alphabetically
+int cmpfunc(const void *x, const void *y) {
+    struct rotation *rx = (struct rotation *) x;
+    struct rotation *ry = (struct rotation *) y;
+    return strcmp(rx->suffix, ry->suffix);
+}
+
+// Takes text to be transformed and its length as
+// arguments and returns the corresponding suffix array
+int *computeSuffixArray(char *input_text, int len_text) {
+    // Array of structures to store rotations and
+    // their indexes
+    struct rotation suff[len_text];
+
+    // Structure is needed to maintain old indexes of
+    // rotations after sorting them
+    for (int i = 0; i < len_text; i++) {
+        suff[i].index = i;
+        suff[i].suffix = (input_text + i);
+    }
+
+    // Sorts rotations using comparison function defined above
+    qsort(suff, len_text, sizeof(struct rotation), cmpfunc);
+
+    // Stores the indexes of sorted rotations
+    int *suffix_arr = (int *) malloc(len_text * sizeof(int));
+    for (int i = 0; i < len_text; i++)
+        suffix_arr[i] = suff[i].index;
+
+    // Returns the computed suffix array
+    return suffix_arr;
+}
+
+// Takes suffix array and its size as arguments and returns
+// the Burrows - Wheeler Transform of given text
+char *findLastChar(char *input_text, int *suffix_arr, int n) {
+    // Iterates over the suffix array to find
+    // the last char of each cyclic rotation
+    char *bwt_arr = (char *) malloc(n * sizeof(char));
+    int i;
+    for (i = 0; i < n; i++) {
+        // Computes the last char which is given by
+        // input_text[(suffix_arr[i] + n - 1) % n]
+        int j = suffix_arr[i] - 1;
+        if (j < 0)
+            j = j + n;
+
+        bwt_arr[i] = input_text[j];
+    }
+
+    bwt_arr[i] = '\0';
+
+    // Returns the computed Burrows - Wheeler Transform
+    return bwt_arr;
+}
+
+#define SLICE 360
+
+//// Driver program to test functions above
+//int main() {
+//    clock_t start = clock();
+//    char input_text[1024 * 1024 + 1];
+//    memset(input_text, 0x00, 1024 * 1024 + 1);
+//
+//    FILE *fp = fopen("/Users/sergio/ClionProjects/osdna/human_g1k_v37.fasta", "r");
+//    fread(input_text, 1, 1024 * SLICE, fp);
+//
+//    input_text[1024 * SLICE] = '$';
+////    printf("SRC:%d\n", strlen(input_text));
+////    printf("%s", input_text);
+//    int len_text = strlen(input_text);
+//
+//    // Computes the suffix array of our text
+//    int *suffix_arr = computeSuffixArray(input_text, len_text);
+//
+//    // Adds to the output array the last char of each rotation
+//    char *bwt_arr = findLastChar(input_text, suffix_arr, len_text);
+//
+////    printf("Input text : %s\n", input_text);
+////    printf("Burrows - Wheeler Transform : \n%s\n", bwt_arr);
+//
+//    printf("SRC:%d\n", strlen(input_text));
+//    printf("DST:%d\n", strlen(bwt_arr));
+//    clock_t end = clock();
+//    float seconds = (float) (end - start) / CLOCKS_PER_SEC;
+//    printf("Seconds %f\n", seconds);
+//    return 0;
+//}
+
+
 int test(char *test_file) {
     /* COMPRESSION */
 
@@ -79,7 +182,7 @@ int test(char *test_file) {
 //        remove(compressed_f);
 //        remove(decompressed_f);
     } else {
-        printf("1. File sizes are not the same. Epic fail!\n");
+        printf("1. File sizes are not the same. Epic fail! %d vs %d\n", ftell(f1), ftell(f2));
     }
 }
 
@@ -112,50 +215,7 @@ int main(int argc, char *argv[]) {
         printf("\nOK\n");
     }
 
-
-
-//    OSDNA_ctx *ctx = osdna_init_ctx();
-//    /* COMPRESSION */
-//    osdna_set_direction(ctx, COMPRESSION);
-//    osdna_set_input_file(ctx, "../lambda_virus.dna");
-//    osdna_set_output_file(ctx, "../lambda_virus.dna.osdna");
-//
-//    osdna_error status = osdna_process(ctx);
-//
-//    if (status != OSDNA_OK) {
-//        printf("We have an error %d", status);
-//    } else {
-//        printf("\nFinished decompression :) \n");
-//    }
-//
-//    osdna_print_statistic(ctx);
-//
-//    if (ctx) {
-//        osdna_free_ctx(ctx);
-//        ctx = NULL;
-//    }
-//
-//    ctx = osdna_init_ctx();
-//    /* DECOMPRESSION */
-//    osdna_set_direction(ctx, DECOMPRESSION);
-//    osdna_set_input_file(ctx, "../lambda_virus.dna.osdna");
-//    osdna_set_output_file(ctx, "../lambda_virus.dna.decompressed");
-//
-//    status = osdna_process(ctx);
-//
-//    if (status != OSDNA_OK) {
-//        printf("We have an error %d", status);
-//    } else {
-//        printf("\nFinished decompression :) \n");
-//    }
-//
-//    osdna_print_statistic(ctx);
-//
-//    if (ctx) {
-//        osdna_free_ctx(ctx);
-//        ctx = NULL;
-//    }
-//    test("../human_g1k_v37.fasta");
+//    test("/Users/sergio/ClionProjects/osdna/lambda_virus.dna");
 
     return 0;
 }
