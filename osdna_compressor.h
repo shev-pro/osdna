@@ -26,6 +26,7 @@ struct OSDNA_ctx {
     char output_buffer[4096];
     int out_buff_pos;
     int trigger_size;
+    int bit_per_num;
 };
 
 OSDNA_ctx *osdna_init_ctx();
@@ -42,6 +43,6 @@ osdna_error osdna_print_statistic(OSDNA_ctx *ctx);
 
 void osdna_free_ctx(OSDNA_ctx *ctx);
 
-int opt_trigger_calc(FILE *read_stream);
+osdna_error opt_trigger_calc(FILE *read_stream, int *trigger_size, int *bit_per_num);
 
 #endif //OSDNA_OSDNA_COMPRESSOR_H
