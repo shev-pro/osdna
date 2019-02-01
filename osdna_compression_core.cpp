@@ -78,34 +78,39 @@ osdna_error compress_core(OSDNA_ctx *ctx) {
     return osdna_bitwriter_finilize(bit_write_handle);
 }
 
-osdna_error opt_trigger_calc(FILE *read_stream, int *trigger_size_out, int *bit_encoding_out) {
-    *trigger_size_out = 0;
-    *bit_encoding_out = 0;
-    unsigned long occ_matr[4][MAX_TRIGGER_SIZE];
+osdna_error opt_param_calc(OSDNA_opt_param *opt_param) {
+    long long occ_matr[4][MAX_TRIGGER_SIZE];
     long long bit_advantage[BIT_ENCODE_SIZE][MAX_TRIGGER_SIZE];
-    long long trigger_size_advantage[BIT_ENCODE_SIZE][MAX_TRIGGER_SIZE];
-    unsigned long long total = 0;
+    long long trigger_size_advantage[4][BIT_ENCODE_SIZE][MAX_TRIGGER_SIZE];
+    int trigger_size_opt[4];
+    int bit_enc_opt[4];
+    long long total = 0;
     char buff[BUFF_SIZE];
     char last_char = 0, curr_char;
     int bytesRead, cont = 1;
 
     memset(occ_matr, 0, 4 * MAX_TRIGGER_SIZE * sizeof(unsigned long));
     memset(bit_advantage, 0, BIT_ENCODE_SIZE * MAX_TRIGGER_SIZE * sizeof(long long));
-    memset(trigger_size_advantage, 0, BIT_ENCODE_SIZE * MAX_TRIGGER_SIZE * sizeof(long long));
+    memset(trigger_size_advantage, 0, 4 * BIT_ENCODE_SIZE * MAX_TRIGGER_SIZE * sizeof(long long));
+    memset(trigger_size_opt, 0, 4 * sizeof(int));
 
-    if (read_stream == (FILE *) NULL) {
-        printf("Error opening file %s\n", read_stream);
+    for (int char_curr = 0; char_curr < 4; char_curr++) {
+        bit_enc_opt[char_curr] = 2;
+    }
+
+    if (opt_param->read_stream == (FILE *) NULL) {
+        printf("Error opening file %s\n", opt_param->read_stream);
         return OSDNA_IO_ERROR;
     }
 
-    bytesRead = fread(buff, 1, 1, read_stream);
+    bytesRead = fread(buff, 1, 1, opt_param->read_stream);
     if (bytesRead == 0) {
         printf("Error empty file\n");
         return OSDNA_IO_ERROR;
     }
     total++;
     last_char = buff[0];
-    while (bytesRead = fread(buff, 1, BUFF_SIZE, read_stream)) {
+    while (bytesRead = fread(buff, 1, BUFF_SIZE, opt_param->read_stream)) {
         for (int i = 0; i < bytesRead; i++) {
             curr_char = buff[i];
             total++;
@@ -140,37 +145,49 @@ osdna_error opt_trigger_calc(FILE *read_stream, int *trigger_size_out, int *bit_
                     bit_advantage[bit_encode][i - 1] + ((i % (int) (pow(2, bit_encode) - 1)) > 0) * 2
                     + ((i % (int) (pow(2, bit_encode) - 1)) == 0) * (2 - bit_encode);
 
-    for (int bit_encode = 2; bit_encode < BIT_ENCODE_SIZE; bit_encode++)
-        for (int trigger_size = 1; trigger_size < MAX_TRIGGER_SIZE; trigger_size++)
-            for (int i = trigger_size; i < MAX_TRIGGER_SIZE; i++)
-                trigger_size_advantage[bit_encode][trigger_size] +=
-                        (occ_matr[POS('A')][i] + occ_matr[POS('C')][i] + occ_matr[POS('G')][i] + occ_matr[POS('T')][i])
-                        * bit_advantage[bit_encode][i - trigger_size];
+    for (int char_curr = 0; char_curr < 4; char_curr++)
+        for (int bit_encode = 2; bit_encode < BIT_ENCODE_SIZE; bit_encode++)
+            for (int trigger_size = 1; trigger_size < MAX_TRIGGER_SIZE; trigger_size++)
+                for (int i = trigger_size; i < MAX_TRIGGER_SIZE; i++)
+                    trigger_size_advantage[char_curr][bit_encode][trigger_size] += occ_matr[char_curr][i]
+                                                                                   * bit_advantage[bit_encode][i - trigger_size];
 
 
-//    for(int i = 2; i<BIT_ENCODE_SIZE; i++)
-//        for (int j = 2; j < MAX_TRIGGER_SIZE; j++)
-//            printf("bit_encode: %d; trigger size: %d; trigg_size_adv: %lli\n", i, j, trigger_size_advantage[j][0]);
-
-
-//    for (int i=1; i<MAX_TRIGGER_SIZE; i++){
-//        printf("%d)\t%lli\t\t%lli\t\t%lli\t\t%lli\n", i, occ_matr[POS('A')][i], occ_matr[POS('C')][i], occ_matr[POS('G')][i], occ_matr[POS('T')][i]);
-//    }
-
-    int trigger_size_opt = 0;
-    int bit_encode_opt = 2;
-
-    for (int bit_encode = 2; bit_encode < BIT_ENCODE_SIZE; bit_encode++)
-        for (int trigger_size = 1; trigger_size < MAX_TRIGGER_SIZE; trigger_size++)
-            if (trigger_size_advantage[bit_encode][trigger_size] >
-                trigger_size_advantage[bit_encode_opt][trigger_size_opt]) {
-                trigger_size_opt = trigger_size;
-                bit_encode_opt = bit_encode;
+    for (int char_curr = 0; char_curr < 4; char_curr++)
+        for (int bit_encode = 2; bit_encode < BIT_ENCODE_SIZE; bit_encode++)
+            for (int trigger_size = 1; trigger_size < MAX_TRIGGER_SIZE; trigger_size++) {
+                if (trigger_size_advantage[char_curr][bit_encode][trigger_size] >
+                    trigger_size_advantage[char_curr][bit_enc_opt[char_curr]][trigger_size_opt[char_curr]]) {
+                    trigger_size_opt[char_curr] = trigger_size;
+                    bit_enc_opt[char_curr] = bit_encode;
+                }
             }
 
-    printf("trigger_size: %d, bit_encode_size: %d, adv_tot %lli\n", trigger_size_opt, bit_encode_opt, trigger_size_advantage[bit_encode_opt][trigger_size_opt]);
-    *trigger_size_out = trigger_size_opt;
-    *bit_encoding_out = bit_encode_opt;
+    long long adv_total=0;
+    for (int char_curr = 0; char_curr < 4; char_curr++) {
+        printf("char: %d trigger_size_opt: %d, bit_enc_opt: %d\n", char_curr, trigger_size_opt[char_curr],
+               bit_enc_opt[char_curr]);
+        switch (char_curr) {
+            case 0:
+                opt_param->opt_bit_A = bit_enc_opt[0];
+                opt_param->opt_trigger_A = trigger_size_opt[0];
+                break;
+            case 1:
+                opt_param->opt_bit_C = bit_enc_opt[1];
+                opt_param->opt_trigger_C = trigger_size_opt[1];
+                break;
+            case 2:
+                opt_param->opt_bit_G = bit_enc_opt[2];
+                opt_param->opt_trigger_G = trigger_size_opt[2];
+                break;
+            case 3:
+                opt_param->opt_bit_T = bit_enc_opt[3];
+                opt_param->opt_trigger_T = trigger_size_opt[3];
+        }
+
+        adv_total += trigger_size_advantage[char_curr][bit_enc_opt[char_curr]][trigger_size_opt[char_curr]];
+    }
+    printf("adv_total %lli\n", adv_total);
 
     return OSDNA_OK;
 }

@@ -29,6 +29,18 @@ struct OSDNA_ctx {
     int bit_per_num;
 };
 
+struct OSDNA_opt_param {
+    FILE *read_stream = NULL;
+    int opt_trigger_A;
+    int opt_trigger_C;
+    int opt_trigger_G;
+    int opt_trigger_T;
+    int opt_bit_A;
+    int opt_bit_C;
+    int opt_bit_G;
+    int opt_bit_T;
+};
+
 OSDNA_ctx *osdna_init_ctx();
 
 osdna_error osdna_set_input_file(OSDNA_ctx *ctx, const char *input_file);
