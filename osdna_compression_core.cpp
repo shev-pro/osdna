@@ -78,9 +78,9 @@ osdna_error compress_core(OSDNA_ctx *ctx) {
     return osdna_bitwriter_finilize(bit_write_handle);
 }
 
-osdna_error opt_trigger_calc(FILE *read_stream, int *trigger_size, int *bit_encoding) {
-    *trigger_size = 0;
-    *bit_encoding = 0;
+osdna_error opt_trigger_calc(FILE *read_stream, int *trigger_size_out, int *bit_encoding_out) {
+    *trigger_size_out = 0;
+    *bit_encoding_out = 0;
     unsigned long occ_matr[4][MAX_TRIGGER_SIZE];
     long long bit_advantage[BIT_ENCODE_SIZE][MAX_TRIGGER_SIZE];
     long long trigger_size_advantage[BIT_ENCODE_SIZE][MAX_TRIGGER_SIZE];
@@ -169,8 +169,10 @@ osdna_error opt_trigger_calc(FILE *read_stream, int *trigger_size, int *bit_enco
             }
 
     printf("trigger_size: %d, bit_encode_size: %d, adv_tot %lli\n", trigger_size_opt, bit_encode_opt, trigger_size_advantage[bit_encode_opt][trigger_size_opt]);
+    *trigger_size_out = trigger_size_opt;
+    *bit_encoding_out = bit_encode_opt;
 
-            return OSDNA_OK;
+    return OSDNA_OK;
 }
 
 void dump_occurence(char curr_char, int last_occ_len, osdna_bit_write_handler *bit_write_handle) {
