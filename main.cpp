@@ -120,7 +120,7 @@ int test(char *test_file) {
     osdna_set_input_file(ctx, test_file);
     osdna_set_output_file(ctx, compressed_f);
 
-    osdna_error status = osdna_process(ctx);
+    osdna_status status = osdna_process(ctx);
 
     if (status != OSDNA_OK) {
         printf("We have an error %d in compression \n", status);
@@ -203,7 +203,7 @@ int main(int argc, char *argv[]) {
     osdna_set_input_file(ctx, argv[2]);
     osdna_set_output_file(ctx, argv[3]);
 
-    osdna_error status = osdna_process(ctx);
+    osdna_status status = osdna_process(ctx);
 
     clock_t end = clock();
     float seconds = (float) (end - start) / CLOCKS_PER_SEC;

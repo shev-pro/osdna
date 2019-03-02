@@ -34,14 +34,14 @@ osdna_bit_write_handler *osdna_bit_init(FILE *write_stream);
  * @param c char to write one of AGCT0123
  * @return error
  */
-osdna_error osdna_bit_write_char(osdna_bit_write_handler *handle, char c);
+osdna_status osdna_bit_write_char(osdna_bit_write_handler *handle, char c);
 
 /**
  * Finilizes writing handle dumping all memory saved data and removes everything
  * @param handle
  * @return
  */
-osdna_error osdna_bitwriter_finilize(osdna_bit_write_handler *handle);
+osdna_status osdna_bitwriter_finilize(osdna_bit_write_handler *handle);
 
 
 #endif //OSDNA_OSDNA_BITWRITER_H

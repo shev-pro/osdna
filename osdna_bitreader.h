@@ -20,7 +20,7 @@ struct osdna_bit_read_handler {
 
 osdna_bit_read_handler *osdna_bit_read_init(FILE *read_stream);
 
-osdna_error osdna_bit_read_char(osdna_bit_read_handler *handle, char *c);
+osdna_status osdna_bit_read_char(osdna_bit_read_handler *handle, char *c);
 
 int get_occ_from_char(char c);
 

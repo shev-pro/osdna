@@ -10,7 +10,7 @@
 enum direct {
     COMPRESSION, DECOMPRESSION
 };
-enum osdna_error {
+enum osdna_status {
     OSDNA_OK = 0,
     OSDNA_IO_ERROR,
     OSDNA_CONFIG_ERROR,
@@ -43,18 +43,19 @@ struct OSDNA_opt_param {
 
 OSDNA_ctx *osdna_init_ctx();
 
-osdna_error osdna_set_input_file(OSDNA_ctx *ctx, const char *input_file);
+osdna_status osdna_set_input_file(OSDNA_ctx *ctx, const char *input_file);
 
-osdna_error osdna_set_output_file(OSDNA_ctx *ctx, const char *output_file);
+osdna_status osdna_set_output_file(OSDNA_ctx *ctx, const char *output_file);
 
-osdna_error osdna_set_direction(OSDNA_ctx *ctx, direct direction);
+osdna_status osdna_set_direction(OSDNA_ctx *ctx, direct direction);
 
-osdna_error osdna_process(OSDNA_ctx *ctx);
+osdna_status osdna_process(OSDNA_ctx *ctx);
 
-osdna_error osdna_print_statistic(OSDNA_ctx *ctx);
+osdna_status osdna_print_statistic(OSDNA_ctx *ctx);
 
 void osdna_free_ctx(OSDNA_ctx *ctx);
 
-osdna_error opt_trigger_calc(FILE *read_stream, int *trigger_size, int *bit_per_num);
+//osdna_status opt_trigger_calc(FILE *read_stream, int *trigger_size, int *bit_per_num);
+osdna_status opt_param_calc(OSDNA_opt_param *opt_param);
 
 #endif //OSDNA_OSDNA_COMPRESSOR_H

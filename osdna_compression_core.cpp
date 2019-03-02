@@ -13,12 +13,12 @@
 
 void dump_occurence(char curr_char, int last_occ_len, osdna_bit_write_handler *bit_write_handle);
 
-osdna_error write_char(OSDNA_ctx *ctx, char c, bool forced = false);
+osdna_status write_char(OSDNA_ctx *ctx, char c, bool forced = false);
 
 int char_to_count(char c);
 
 
-osdna_error compress_core(OSDNA_ctx *ctx) {
+osdna_status compress_core(OSDNA_ctx *ctx) {
     printf("Initializing compression core\n");
 
     int bytesRead;
@@ -30,11 +30,11 @@ osdna_error compress_core(OSDNA_ctx *ctx) {
 
     int print_counter = 0;
 
-    osdna_error error = (opt_trigger_calc(ctx->read_stream, &ctx->trigger_size, &ctx->bit_per_num));
-    if (error != OSDNA_OK) {
-        printf("FAILED with %d\n", error);
-        return error;
-    }
+//    osdna_status error = (opt_trigger_calc(ctx->read_stream, &ctx->trigger_size, &ctx->bit_per_num));
+//    if (error != OSDNA_OK) {
+//        printf("FAILED with %d\n", error);
+//        return error;
+//    }
     if (ctx->trigger_size < 3) {
         ctx->trigger_size = 3;
     }
@@ -78,7 +78,7 @@ osdna_error compress_core(OSDNA_ctx *ctx) {
     return osdna_bitwriter_finilize(bit_write_handle);
 }
 
-osdna_error opt_param_calc(OSDNA_opt_param *opt_param) {
+osdna_status opt_param_calc(OSDNA_opt_param *opt_param) {
     long long occ_matr[4][MAX_TRIGGER_SIZE];
     long long bit_advantage[BIT_ENCODE_SIZE][MAX_TRIGGER_SIZE];
     long long trigger_size_advantage[4][BIT_ENCODE_SIZE][MAX_TRIGGER_SIZE];
@@ -210,12 +210,12 @@ void dump_occurence(char curr_char, int last_occ_len, osdna_bit_write_handler *b
     osdna_bit_write_char(bit_write_handle, curr_char);
 }
 
-osdna_error decompress_core(OSDNA_ctx *ctx) {
+osdna_status decompress_core(OSDNA_ctx *ctx) {
     printf("Initializing decompression core\n");
 
     osdna_bit_read_handler *handler = osdna_bit_read_init(ctx->read_stream);
     char current_char = 'Q';
-    osdna_error error = OSDNA_OK;
+    osdna_status error = OSDNA_OK;
     char prev_char = 'Q';
     int last_seq = 1;
     bool reading_seq = false;
@@ -286,7 +286,7 @@ int char_to_count(char c) {
         return 3;
 }
 
-osdna_error write_char(OSDNA_ctx *ctx, char c, bool forced) {
+osdna_status write_char(OSDNA_ctx *ctx, char c, bool forced) {
     if (ctx->out_buff_pos == 4096 - 1 || forced) {
 //        printf("%d\n", ctx->out_buff_pos);
         int bytes = fwrite(ctx->output_buffer, 1, ctx->out_buff_pos, ctx->write_stream);
