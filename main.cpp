@@ -188,7 +188,7 @@ int test(char *test_file) {
     }
 }
 
-int main2(int argc, char *argv[]) {
+int main(int argc, char *argv[]) {
     clock_t start = clock();
     if (argc != 4) {
         printf("Usage: <C for compression or D for decompression> <input> <output>\n");
@@ -222,39 +222,47 @@ int main2(int argc, char *argv[]) {
     return 0;
 }
 
-int main(int argc, char *argv[]) {
+int bitwriter() {
     clock_t start = clock();
+
+
+    //WRITING
     osdna_status status = OSDNA_OK;
     FILE *src = fopen("/tmp/test.wr", "wb");
     osdna_bit_write_handler *handler = osdna_bit_init(src);
-    int8_t buffer[1024] = {1, 1, 1, 1, 1, 0, 1, 1};
 
-    for (int i = 0; i < 3; ++i) {
-        status = osdna_bit_write(handler, buffer, 3);
-        if (status != OSDNA_OK) {
-            printf("Write error\n");
-        }
+    int8_t buffer[9] = {1, 0, 1, 0, 1, 1, 1, 1, 0};
+    status = osdna_bit_write(handler, buffer, 5);
+    if (status != OSDNA_OK) {
+        printf("Write error %d\n", status);
+        return -1;
     }
     status = osdna_bitwriter_finilize(handler);
     if (status != OSDNA_OK) {
-        printf("Write error\n");
-    }
-//
-    FILE *src2 = fopen("/tmp/test.wr", "rb");
-    osdna_bit_read_handler *handler2 = osdna_bit_read_init(src2);
-    int8_t buffer2[1024];
-    int toread = 50;
-    status = osdna_bit_read(handler2, buffer, &toread);
-    if (status == OSDNA_EOF) {
-        printf("OK\n");
-    } else if (status != OSDNA_OK) {
-        printf("ERROR");
-    }
-    for (int i = 0; i < toread; i++) {
-        printf("%d", buffer[i]);
+        printf("Write error %d\n", status);
+        return -2;
     }
 
+    fclose(src);
+//
+    printf("\n");
+
+    //READING
+    FILE *reading = fopen("/tmp/test.wr", "rb");
+    osdna_bit_read_handler *handler2 = osdna_bit_read_init(reading);
+    int8_t buffer2[1024];
+    int toread = 5;
+    status = osdna_bit_read(handler2, buffer, &toread);
+    if (status == OSDNA_EOF) { //Returns EOF and updates toread
+        printf("FINISHED\n");
+    } else if (status != OSDNA_OK) {
+        printf("Write error %d\n", status);
+        return -2;
+    }
+    fclose(reading);
+
     clock_t end = clock();
+
     float seconds = (float) (end - start) / CLOCKS_PER_SEC;
     printf("\nTime needed %f sec\n", seconds);
 }
