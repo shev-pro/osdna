@@ -1,5 +1,6 @@
 #include <cstdlib>
 #include "osdna_bitreader.h"
+#include "osdna_utils.h"
 
 #define BYTE_TO_BINARY_PATTERN "%c%c %c%c %c%c %c%c\n"
 #define BYTE_TO_BINARY(byte)  \
@@ -12,9 +13,7 @@
   (byte & 0x02 ? '1' : '0'), \
   (byte & 0x01 ? '1' : '0')
 
-osdna_status read_next_window(osdna_bit_read_handler *handle, char *c);
-
-osdna_status read_char_from_window(osdna_bit_read_handler *pHandler, char *c);
+osdna_status read_next_window(osdna_bit_read_handler *handle);
 
 osdna_bit_read_handler *osdna_bit_read_init(FILE *read_stream) {
     osdna_bit_read_handler *ctx = (osdna_bit_read_handler *) malloc(sizeof(osdna_bit_read_handler));
@@ -32,54 +31,8 @@ osdna_bit_read_handler *osdna_bit_read_init(FILE *read_stream) {
     return ctx;
 }
 
-char get_char_from_bits(char c) { //Bits-pair encoding protocl
-    if (c == 0x00) {
-        return 'A'; //0
-    }
-    if (c == 0x01) {
-        return 'C'; //1
-    }
-    if (c == 0x02) {
-        return 'G'; //2
-    }
-    if (c == 0x03) {
-        return 'T'; //3
-    }
-}
 
-int get_occ_from_char(char c) {
-    if (c == 'A')
-        return 0;
-    if (c == 'C')
-        return 1;
-    if (c == 'G')
-        return 2;
-    if (c == 'T')
-        return 3;
-}
-
-osdna_status osdna_bit_read_char(osdna_bit_read_handler *handle, char *c) {
-    if (handle->bit_position > 0) {
-        return read_char_from_window(handle, c);
-    } else { // finished current window
-        osdna_status status = read_next_window(handle, c);
-        if (status != OSDNA_OK) {
-            return status;
-        } else {
-            return read_char_from_window(handle, c);
-        }
-    }
-}
-
-osdna_status read_char_from_window(osdna_bit_read_handler *handle, char *c) {
-    char mask = (handle->current_window & 0xc0) >> 6;  //takes first 2 bits and shifts right
-    handle->current_window = (handle->current_window << 2);
-    handle->bit_position = handle->bit_position - 2;
-    *c = get_char_from_bits(mask);
-    return OSDNA_OK;
-}
-
-osdna_status read_next_window(osdna_bit_read_handler *handle, char *c) {
+osdna_status read_next_window(osdna_bit_read_handler *handle) {
     if (handle->file_bytes_remaining == 2) { // A very, very special case
         handle->to_read_buff_size = fread(handle->read_buffer, 1, READ_BUFFER_SIZE, handle->read_stream);
         handle->to_read_buff_size = handle->to_read_buff_size - 2;
@@ -96,7 +49,7 @@ osdna_status read_next_window(osdna_bit_read_handler *handle, char *c) {
         if (handle->last_window) {
             handle->current_window = handle->read_buffer[handle->current_buffer_read_pos];
             handle->current_buffer_read_pos++;
-            handle->bit_position = 8 - handle->read_buffer[handle->current_buffer_read_pos];
+            handle->bit_position = handle->read_buffer[handle->current_buffer_read_pos];
             handle->last_window = false;
             return OSDNA_OK;
         }
@@ -117,4 +70,54 @@ osdna_status read_next_window(osdna_bit_read_handler *handle, char *c) {
     handle->to_read_buff_size--;
     handle->bit_position = 8;
     return OSDNA_OK;
+}
+
+int8_t read_bit_from_window(osdna_bit_read_handler *handle) {
+    unsigned char mask = handle->current_window & 0x80;
+#ifdef DEBUG
+    printf("Window %c%c %c%c %c%c %c%c\n", BYTE_TO_BINARY(handle->current_window));
+    printf("Mask %c%c %c%c %c%c %c%c\n", BYTE_TO_BINARY(mask));
+#endif
+    handle->current_window = handle->current_window << 1;
+    handle->bit_position--;
+    if (mask == 0x80) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+osdna_status osdna_bit_read(osdna_bit_read_handler *handle, int8_t *buffer, int *count) {
+    int intcount = *count;
+    osdna_status st = OSDNA_OK;
+    if (handle->bit_position == 0) {
+        st = read_next_window(handle);
+        if (st != OSDNA_OK) {
+            return st;
+        }
+    }
+    int buffer_pos = 0;
+    if (handle->bit_position > intcount) { // Read directly
+        for (int i = 0; i < intcount; ++i) {
+            buffer[buffer_pos] = read_bit_from_window(handle);
+            buffer_pos++;
+        }
+    } else {
+        while (intcount > 0) {
+            if (handle->bit_position == 0) {
+                st = read_next_window(handle);
+                if (st == OSDNA_EOF) {
+                    *count = *count - intcount;
+                }
+                if (st != OSDNA_OK) {
+                    return st;
+                }
+            }
+            buffer[buffer_pos] = read_bit_from_window(handle);
+            buffer_pos++;
+            intcount--;
+        }
+    }
+
+    return st;
 }

@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include "OSdna.h"
 #include "osdna_bitwriter.h"
+#include "osdna_bitreader.h"
 
 // C program to find Burrows Wheeler transform of
 // a given text
@@ -223,8 +224,8 @@ int main2(int argc, char *argv[]) {
 
 int main(int argc, char *argv[]) {
     clock_t start = clock();
-    FILE *src = fopen("/tmp/test.wr", "wb");
     osdna_status status = OSDNA_OK;
+    FILE *src = fopen("/tmp/test.wr", "wb");
     osdna_bit_write_handler *handler = osdna_bit_init(src);
     int8_t buffer[1024] = {1, 1, 1, 1, 1, 0, 1, 1};
 
@@ -237,6 +238,20 @@ int main(int argc, char *argv[]) {
     status = osdna_bitwriter_finilize(handler);
     if (status != OSDNA_OK) {
         printf("Write error\n");
+    }
+//
+    FILE *src2 = fopen("/tmp/test.wr", "rb");
+    osdna_bit_read_handler *handler2 = osdna_bit_read_init(src2);
+    int8_t buffer2[1024];
+    int toread = 50;
+    status = osdna_bit_read(handler2, buffer, &toread);
+    if (status == OSDNA_EOF) {
+        printf("OK\n");
+    } else if (status != OSDNA_OK) {
+        printf("ERROR");
+    }
+    for (int i = 0; i < toread; i++) {
+        printf("%d", buffer[i]);
     }
 
     clock_t end = clock();

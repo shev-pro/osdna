@@ -211,68 +211,68 @@ void dump_occurence(char curr_char, int last_occ_len, osdna_bit_write_handler *b
 }
 
 osdna_status decompress_core(OSDNA_ctx *ctx) {
-    printf("Initializing decompression core\n");
-
-    osdna_bit_read_handler *handler = osdna_bit_read_init(ctx->read_stream);
-    char current_char = 'Q';
-    osdna_status error = OSDNA_OK;
-    char prev_char = 'Q';
-    int last_seq = 1;
-    bool reading_seq = false;
-//    ctx->trigger_size = 4;
-//    int print_counter = 0;
-    while ((error = osdna_bit_read_char(handler, &current_char)) == OSDNA_OK) {
-//        if (print_counter % 1024 == 0) {
-//            printf("Processed %d Mb\n", print_counter / 1024);
+//    printf("Initializing decompression core\n");
+//
+//    osdna_bit_read_handler *handler = osdna_bit_read_init(ctx->read_stream);
+//    char current_char = 'Q';
+//    osdna_status error = OSDNA_OK;
+//    char prev_char = 'Q';
+//    int last_seq = 1;
+//    bool reading_seq = false;
+////    ctx->trigger_size = 4;
+////    int print_counter = 0;
+//    while ((error = osdna_bit_read_char(handler, &current_char)) == OSDNA_OK) {
+////        if (print_counter % 1024 == 0) {
+////            printf("Processed %d Mb\n", print_counter / 1024);
+////        }
+////        print_counter++;
+//
+//        if (reading_seq) {
+//            reading_seq = false;
+//            last_seq = 1;
+//            int iter_count = char_to_count(current_char);
+//            for (int i = 0; i < iter_count; i++) {
+////                printf("%c", prev_char);
+//                error = write_char(ctx, prev_char);
+//                if (error != OSDNA_OK) {
+//                    return error;
+//                }
+//            }
+//            if (iter_count == ctx->trigger_size) {
+//                reading_seq = true;
+//            }
+//            continue;
 //        }
-//        print_counter++;
-
-        if (reading_seq) {
-            reading_seq = false;
-            last_seq = 1;
-            int iter_count = char_to_count(current_char);
-            for (int i = 0; i < iter_count; i++) {
-//                printf("%c", prev_char);
-                error = write_char(ctx, prev_char);
-                if (error != OSDNA_OK) {
-                    return error;
-                }
-            }
-            if (iter_count == ctx->trigger_size) {
-                reading_seq = true;
-            }
-            continue;
-        }
-
-        if (prev_char == current_char) {
-            last_seq++;
-            error = write_char(ctx, current_char);
-//            printf("%c", current_char);
-            if (error != OSDNA_OK) {
-                return error;
-            }
-        } else {
-            last_seq = 1;
-            error = write_char(ctx, current_char);
-//            printf("%c", current_char);
-            if (error != OSDNA_OK) {
-                return error;
-            }
-        }
-        prev_char = current_char;
-
-        if (last_seq == ctx->trigger_size) {
-            reading_seq = true;
-            continue;
-        }
-
-
-    }
-    if (error == OSDNA_EOF) { // if end of file we finished here!
-        return write_char(ctx, prev_char, true);
-    } else {
-        return error;
-    }
+//
+//        if (prev_char == current_char) {
+//            last_seq++;
+//            error = write_char(ctx, current_char);
+////            printf("%c", current_char);
+//            if (error != OSDNA_OK) {
+//                return error;
+//            }
+//        } else {
+//            last_seq = 1;
+//            error = write_char(ctx, current_char);
+////            printf("%c", current_char);
+//            if (error != OSDNA_OK) {
+//                return error;
+//            }
+//        }
+//        prev_char = current_char;
+//
+//        if (last_seq == ctx->trigger_size) {
+//            reading_seq = true;
+//            continue;
+//        }
+//
+//
+//    }
+//    if (error == OSDNA_EOF) { // if end of file we finished here!
+//        return write_char(ctx, prev_char, true);
+//    } else {
+//        return error;
+//    }
 }
 
 int char_to_count(char c) {
