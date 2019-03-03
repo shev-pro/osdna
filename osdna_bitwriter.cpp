@@ -27,36 +27,6 @@ osdna_bit_write_handler *osdna_bit_init(FILE *write_stream) {
     return ctx;
 }
 
-char get_bits_char(char c) { //Bits-pair encoding protocl
-    if (c == 'A' || c == '0')
-        return 0x00;
-    if (c == 'C' || c == '1')
-        return 0x01;
-    if (c == 'G' || c == '2')
-        return 0x02;
-    if (c == 'T' || c == '3')
-        return 0x03;
-}
-
-osdna_status osdna_bit_write_char(osdna_bit_write_handler *handle, char c) {
-    char bitchar = get_bits_char(c);
-//    printf("%c", c);
-
-    handle->current_window = handle->current_window | bitchar;
-
-//    printf("Added char %c, current window: %c%c %c%c %c%c %c%c\n", c, BYTE_TO_BINARY(handle->current_window));
-    handle->bit_position = handle->bit_position + 2;
-    if (handle->bit_position == 8) {
-        osdna_status error = write_window(handle);
-        if (error != OSDNA_OK)
-            return error;
-        handle->bit_position = 0;
-        handle->current_window = 0x00;
-    } else {
-        handle->current_window = handle->current_window << 2;
-    }
-}
-
 osdna_status write_window(osdna_bit_write_handler *handler, bool forced) {
     handler->write_buffer[handler->buffer_position] = handler->current_window;
     handler->buffer_position++;

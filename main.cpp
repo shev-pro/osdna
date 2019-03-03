@@ -226,10 +226,10 @@ int main(int argc, char *argv[]) {
     FILE *src = fopen("/tmp/test.wr", "wb");
     osdna_status status = OSDNA_OK;
     osdna_bit_write_handler *handler = osdna_bit_init(src);
-    int8_t buffer[1024] = {1, 0, 0, 1, 1, 0, 1};
+    int8_t buffer[1024] = {1, 1, 1, 1, 1, 0, 1, 1};
 
-    for (int i = 0; i < 104857600; ++i) {
-        status = osdna_bit_write(handler, buffer, 8);
+    for (int i = 0; i < 3; ++i) {
+        status = osdna_bit_write(handler, buffer, 3);
         if (status != OSDNA_OK) {
             printf("Write error\n");
         }
@@ -241,5 +241,5 @@ int main(int argc, char *argv[]) {
 
     clock_t end = clock();
     float seconds = (float) (end - start) / CLOCKS_PER_SEC;
-    printf("Time needed %f sec\n", seconds);
+    printf("\nTime needed %f sec\n", seconds);
 }

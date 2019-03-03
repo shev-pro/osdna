@@ -8,7 +8,7 @@
  */
 
 #define WRITE_BUFFER_SIZE 1024
-//#define DEBUG
+#define DEBUG
 struct osdna_bit_write_handler {
     FILE *write_stream;
     char write_buffer[WRITE_BUFFER_SIZE];
@@ -25,17 +25,12 @@ struct osdna_bit_write_handler {
 osdna_bit_write_handler *osdna_bit_init(FILE *write_stream);
 
 /**
- * Writes single char c to file in binary rappresentation.
- * Organizes each 4 chars as 1 single byte, permitted charset is AGCT0123
- *
- * Uses WRITE_BUFFER_SIZE bytes cache to make bulk writes
- *
- * @param handle writing handle for context discovery
- * @param c char to write one of AGCT0123
- * @return error
+ * Writes boolean sequences to file
+ * @param handle
+ * @param bytes bytes buffer (accepts only 0 or 1)
+ * @param count bit count to write
+ * @return
  */
-osdna_status osdna_bit_write_char(osdna_bit_write_handler *handle, char c);
-
 osdna_status osdna_bit_write(osdna_bit_write_handler *handle, int8_t *bytes, int count);
 
 /**
