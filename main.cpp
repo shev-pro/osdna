@@ -10,6 +10,7 @@
 #include<string.h>
 #include<stdlib.h>
 
+#define DEBUG
 // Structure to store data of a rotation
 struct rotation {
     int index;
@@ -186,7 +187,7 @@ int test(char *test_file) {
     }
 }
 
-int main(int argc, char *argv[]) {
+int main2(int argc, char *argv[]) {
     clock_t start = clock();
     if (argc != 4) {
         printf("Usage: <C for compression or D for decompression> <input> <output>\n");
@@ -218,4 +219,27 @@ int main(int argc, char *argv[]) {
 //    test("/Users/sergio/ClionProjects/osdna/lambda_virus.dna");
 
     return 0;
+}
+
+int main(int argc, char *argv[]) {
+    clock_t start = clock();
+    FILE *src = fopen("/tmp/test.wr", "wb");
+    osdna_status status = OSDNA_OK;
+    osdna_bit_write_handler *handler = osdna_bit_init(src);
+    int8_t buffer[1024] = {1, 0, 0, 1, 1, 0, 1};
+
+    for (int i = 0; i < 104857600; ++i) {
+        status = osdna_bit_write(handler, buffer, 8);
+        if (status != OSDNA_OK) {
+            printf("Write error\n");
+        }
+    }
+    status = osdna_bitwriter_finilize(handler);
+    if (status != OSDNA_OK) {
+        printf("Write error\n");
+    }
+
+    clock_t end = clock();
+    float seconds = (float) (end - start) / CLOCKS_PER_SEC;
+    printf("Time needed %f sec\n", seconds);
 }

@@ -17,18 +17,6 @@ enum osdna_status {
     OSDNA_DATA_CHAR_ERROR,
     OSDNA_EOF
 };
-struct OSDNA_ctx {
-    char input_file[4096];
-    char output_file[4096];
-    direct direction = COMPRESSION;
-    FILE *read_stream = NULL;
-    FILE *write_stream = NULL;
-    char output_buffer[4096];
-    int out_buff_pos;
-    int trigger_size;
-    int bit_per_num;
-};
-
 struct OSDNA_opt_param {
     FILE *read_stream = NULL;
     int opt_trigger_A;
@@ -40,6 +28,21 @@ struct OSDNA_opt_param {
     int opt_bit_G;
     int opt_bit_T;
 };
+struct OSDNA_ctx {
+    char input_file[4096];
+    char output_file[4096];
+    direct direction = COMPRESSION;
+    FILE *read_stream = NULL;
+    FILE *write_stream = NULL;
+
+    char output_buffer[4096];
+    int out_buff_pos;
+    int trigger_size;
+    int bit_per_num;
+    OSDNA_opt_param *opt_param = NULL;
+};
+
+
 
 OSDNA_ctx *osdna_init_ctx();
 

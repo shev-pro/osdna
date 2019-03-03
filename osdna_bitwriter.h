@@ -8,13 +8,13 @@
  */
 
 #define WRITE_BUFFER_SIZE 1024
-
+//#define DEBUG
 struct osdna_bit_write_handler {
     FILE *write_stream;
     char write_buffer[WRITE_BUFFER_SIZE];
     short bit_position;
     short buffer_position;
-    char current_window;
+    unsigned char current_window;
 };
 
 /**
@@ -35,6 +35,8 @@ osdna_bit_write_handler *osdna_bit_init(FILE *write_stream);
  * @return error
  */
 osdna_status osdna_bit_write_char(osdna_bit_write_handler *handle, char c);
+
+osdna_status osdna_bit_write(osdna_bit_write_handler *handle, int8_t *bytes, int count);
 
 /**
  * Finilizes writing handle dumping all memory saved data and removes everything
