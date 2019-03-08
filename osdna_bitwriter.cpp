@@ -2,7 +2,7 @@
 #include <cstdlib>
 #include "osdna_bitwriter.h"
 #include "osdna_utils.h"
-#define DEBUG
+//#define DEBUG
 #define BYTE_TO_BINARY_PATTERN "%c%c %c%c %c%c %c%c\n"
 #define BYTE_TO_BINARY(byte)  \
   (byte & 0x80 ? '1' : '0'), \

@@ -7,12 +7,20 @@
 #include <cstdlib>
 #include <math.h>
 
+//#define DEBUG
 #define BUFF_SIZE 1024
 #define MAX_TRIGGER_SIZE 2000
 #define BIT_ENCODE_SIZE 10
 #define POS(X) (X == 'A' ? 0 : (X=='C' ? 1 : (X=='G' ? 2 : (X=='T' ? 3 : -1))))
 
 
+void printBuffer(int8_t *buff, int pointer){
+    printf("BUFFER: ");
+    for (int yy = 0; yy < pointer ; yy++){
+        printf("%d", buff[yy]);
+    }
+    printf("\n");
+}
 int getMaxBitLen(OSDNA_opt_param *opt){
     int toReturn = 0;
     toReturn = (opt->opt_bit_A > opt->opt_bit_C)?opt->opt_bit_A:opt->opt_bit_C;
@@ -59,22 +67,28 @@ int getTriggerSizeByChar(OSDNA_opt_param *opt, char c){
 
 void fillBufferNumber(int8_t *buff, char ch, int val, int *pointer, OSDNA_opt_param *opt){
 
-        int n, c, k;
-        n = val;
+    int n, c, k;
+    n = val;
+    for (c = getBitLengthByChar(opt, ch) - 1; c >= 0; c--)
+    {
+        k = n >> c;
+        k = k & 1;
+        if (k)
+            buff[*pointer] = 1;
+        else
+            buff[*pointer] = 0;
 
-        for (c = getBitLengthByChar(opt, ch); c > 0; c--)
-        {
-            k = n >> c;
-            k = k & 1;
-            if (k)
-                buff[*pointer++] = 1;
-            else
-                buff[*pointer++] = 0;
-        }
-
+#ifdef DEBUG
+        printf("buff[%d]:%d ",*pointer, buff[*pointer]);
+#endif
+        *pointer = *pointer + 1;
+    }
+#ifdef DEBUG
+    printf("\n");
+#endif
 }
 
-void fillBuffer(int8_t * buff, char c, int val, bool number, int *pointer, OSDNA_opt_param *opt){
+void fillBuffer(int8_t *buff, char c, int val, bool number, int *pointer, OSDNA_opt_param *opt){
     if(number){
         fillBufferNumber(buff, c, val, pointer, opt);
     }
@@ -83,28 +97,40 @@ void fillBuffer(int8_t * buff, char c, int val, bool number, int *pointer, OSDNA
             case 'A': {
                 buff[*pointer] = 0;
                 buff[*pointer + 1] = 0;
-                printf("Inserisco buff[0]:%d buff[1]:%d\n",buff[*pointer],buff[*pointer + 1]);
+#ifdef DEBUG
+                printf("buff[%d]:%d ",*pointer, buff[*pointer]);
+                printf("buff[%d]:%d \n",*pointer + 1, buff[*pointer + 1]);
+#endif
                 *pointer = *pointer + 2;
                 break;
             }
             case 'C': {
                 buff[*pointer] = 0;
                 buff[*pointer + 1] = 1;
-                printf("Inserisco buff[0]:%d buff[1]:%d\n",buff[*pointer],buff[*pointer + 1]);
+#ifdef DEBUG
+                printf("buff[%d]:%d ",*pointer, buff[*pointer]);
+                printf("buff[%d]:%d \n",*pointer + 1, buff[*pointer + 1]);
+#endif
                 *pointer = *pointer + 2;
                 break;
             }
             case 'G': {
                 buff[*pointer] = 1;
                 buff[*pointer + 1] = 0;
-                printf("Inserisco buff[0]:%d buff[1]:%d\n",buff[*pointer],buff[*pointer + 1]);
+#ifdef DEBUG
+                printf("buff[%d]:%d ",*pointer, buff[*pointer]);
+                printf("buff[%d]:%d \n",*pointer + 1, buff[*pointer + 1]);
+#endif
                 *pointer = *pointer + 2;
                 break;
             }
             case 'T': {
                 buff[*pointer] = 1;
                 buff[*pointer + 1] = 1;
-                printf("Inserisco buff[0]:%d buff[1]:%d\n",buff[*pointer],buff[*pointer + 1]);
+#ifdef DEBUG
+                printf("buff[%d]:%d ",*pointer, buff[*pointer]);
+                printf("buff[%d]:%d \n",*pointer + 1, buff[*pointer + 1]);
+#endif
                 *pointer = *pointer + 2;
                 break;
             }
@@ -155,12 +181,12 @@ void manageWrite(int8_t *toWrite, int last_occ_len, int actual_trigger_size, int
         counter = (last_occ_len * 2) + actual_bit_size;
     } else{
         for(j = 0; j < actual_trigger_size; j++){
-            fillBuffer(toWrite, last_char, -1,false, &pointer,opt_param);
+            fillBuffer(toWrite, last_char, -1,false, &pointer, opt_param);
         }
         counter = actual_trigger_size * 2;
         last_occ_len -= actual_trigger_size;
-        int max_r = (int) pow(2, actual_bit_size);
-        while(last_occ_len > max_r){
+        int max_r = (int) (pow(2, actual_bit_size)) - 1;
+        while(last_occ_len >= max_r){
             fillBuffer(toWrite, last_char, max_r, true, &pointer, opt_param);
             last_occ_len -= max_r;
             counter += actual_bit_size;
@@ -168,8 +194,10 @@ void manageWrite(int8_t *toWrite, int last_occ_len, int actual_trigger_size, int
         fillBuffer(toWrite, last_char, last_occ_len, true, &pointer, opt_param);
         counter += actual_bit_size;
     }
-
+#ifdef DEBUG
+    printBuffer(toWrite, pointer);
     osdna_bit_write(bit_write_handle, toWrite, counter);
+#endif
 }
 
 osdna_status opt_param_calc(OSDNA_opt_param *opt_param) {
@@ -304,7 +332,7 @@ osdna_status compress_core(OSDNA_ctx *ctx) {
 
     opt_param->opt_bit_A = 3;
     opt_param->opt_bit_C = 3;
-    opt_param->opt_bit_T = 3;
+    opt_param->opt_bit_T = 2;
     opt_param->opt_bit_G = 3;
     opt_param->opt_trigger_A = 2;
     opt_param->opt_trigger_C = 2;
