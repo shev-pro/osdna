@@ -8,7 +8,7 @@
  */
 
 #define WRITE_BUFFER_SIZE 1024
-//#define DEBUG
+#define DEBUG
 struct osdna_bit_write_handler {
     FILE *write_stream;
     char write_buffer[WRITE_BUFFER_SIZE];

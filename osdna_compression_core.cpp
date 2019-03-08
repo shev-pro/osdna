@@ -4,6 +4,8 @@
 #include "osdna_bitreader.h"
 #include <string.h>
 #include <math.h>
+#include <cstdlib>
+#include <math.h>
 
 #define BUFF_SIZE 1024
 #define MAX_TRIGGER_SIZE 2000
@@ -11,71 +13,163 @@
 #define POS(X) (X == 'A' ? 0 : (X=='C' ? 1 : (X=='G' ? 2 : (X=='T' ? 3 : -1))))
 
 
-void dump_occurence(char curr_char, int last_occ_len, osdna_bit_write_handler *bit_write_handle);
+int getMaxBitLen(OSDNA_opt_param *opt){
+    int toReturn = 0;
+    toReturn = (opt->opt_bit_A > opt->opt_bit_C)?opt->opt_bit_A:opt->opt_bit_C;
+    toReturn = (toReturn > opt->opt_bit_G)?toReturn:opt->opt_bit_G;
+    toReturn = (toReturn > opt->opt_bit_T)?toReturn:opt->opt_bit_T;
+    return toReturn;
+}
 
-osdna_status write_char(OSDNA_ctx *ctx, char c, bool forced = false);
-
-int char_to_count(char c);
-
-
-osdna_status compress_core(OSDNA_ctx *ctx) {
-    printf("Initializing compression core\n");
-
-    int bytesRead;
-    char file_read_buff[1024]; // for perfomance reasons lets read 1KB at once
-    char curr_char;
-    char last_char = 'Q'; // Any char excluded AGTC
-    int last_occ_len = 0;
-    osdna_bit_write_handler *bit_write_handle = osdna_bit_init(ctx->write_stream);
-
-    int print_counter = 0;
-
-//    osdna_status error = (opt_trigger_calc(ctx->read_stream, &ctx->trigger_size, &ctx->bit_per_num));
-//    if (error != OSDNA_OK) {
-//        printf("FAILED with %d\n", error);
-//        return error;
-//    }
-    if (ctx->trigger_size < 3) {
-        ctx->trigger_size = 3;
-    }
-    printf("Trigger size %d\n", ctx->trigger_size);
-    printf("Bits per num %d\n", ctx->bit_per_num);
-//    ctx->trigger_size = 4;
-    while (bytesRead = fread(file_read_buff, 1, 1024, ctx->read_stream)) {
-//        if (print_counter % 1024 == 0) {
-//            printf("Processed %d Mb\n", print_counter / 1024);
-//        }
-//        print_counter++;
-        for (int i = 0; i < bytesRead; i++) {
-            curr_char = file_read_buff[i];
-            if (!is_acceptable_char(curr_char))  // are acceptable only AGCT, everything else is skipped
-//                return OSDNA_DATA_CHAR_ERROR;
-                continue;
-
-            if (last_char == curr_char) {
-                if (last_occ_len < ctx->trigger_size) {
-//                    osdna_bit_write_char(bit_write_handle, curr_char);
-                    last_occ_len++;
-                } else {
-                    last_occ_len++;
-                }
-            } else {
-                if (last_occ_len < ctx->trigger_size) {
-//                    osdna_bit_write_char(bit_write_handle, curr_char);
-                    last_occ_len = 1;
-                } else {
-                    dump_occurence(curr_char, last_occ_len, bit_write_handle);
-                    last_occ_len = 1;
-                }
-            }
-            last_char = curr_char;
+int getBitLengthByChar(OSDNA_opt_param *opt, char c){
+    switch(c){
+        case 'A':{
+            return opt->opt_bit_A;
+        }
+        case 'C':{
+            return opt->opt_bit_C;
+        }
+        case 'G':{
+            return opt->opt_bit_G;
+        }
+        case 'T':{
+            return opt->opt_bit_T;
         }
     }
-    if (last_occ_len > 1) {
-        dump_occurence(curr_char, last_occ_len - 1, bit_write_handle);
+    return -1;
+}
+
+int getTriggerSizeByChar(OSDNA_opt_param *opt, char c){
+    switch(c){
+        case 'A':{
+            return opt->opt_trigger_A;
+        }
+        case 'C':{
+            return opt->opt_trigger_C;
+        }
+        case 'G':{
+            return opt->opt_trigger_G;
+        }
+        case 'T':{
+            return opt->opt_trigger_T;
+        }
+    }
+    return -1;
+}
+
+void fillBufferNumber(int8_t *buff, char ch, int val, int *pointer, OSDNA_opt_param *opt){
+
+        int n, c, k;
+        n = val;
+
+        for (c = getBitLengthByChar(opt, ch); c > 0; c--)
+        {
+            k = n >> c;
+            k = k & 1;
+            if (k)
+                buff[*pointer++] = 1;
+            else
+                buff[*pointer++] = 0;
+        }
+
+}
+
+void fillBuffer(int8_t * buff, char c, int val, bool number, int *pointer, OSDNA_opt_param *opt){
+    if(number){
+        fillBufferNumber(buff, c, val, pointer, opt);
+    }
+    else {
+        switch (c) {
+            case 'A': {
+                buff[*pointer] = 0;
+                buff[*pointer + 1] = 0;
+                printf("Inserisco buff[0]:%d buff[1]:%d\n",buff[*pointer],buff[*pointer + 1]);
+                *pointer = *pointer + 2;
+                break;
+            }
+            case 'C': {
+                buff[*pointer] = 0;
+                buff[*pointer + 1] = 1;
+                printf("Inserisco buff[0]:%d buff[1]:%d\n",buff[*pointer],buff[*pointer + 1]);
+                *pointer = *pointer + 2;
+                break;
+            }
+            case 'G': {
+                buff[*pointer] = 1;
+                buff[*pointer + 1] = 0;
+                printf("Inserisco buff[0]:%d buff[1]:%d\n",buff[*pointer],buff[*pointer + 1]);
+                *pointer = *pointer + 2;
+                break;
+            }
+            case 'T': {
+                buff[*pointer] = 1;
+                buff[*pointer + 1] = 1;
+                printf("Inserisco buff[0]:%d buff[1]:%d\n",buff[*pointer],buff[*pointer + 1]);
+                *pointer = *pointer + 2;
+                break;
+            }
+        }
+    }
+}
+
+void initActualParam(int *actual_trigger_size, int *actual_bit_size, char last_char, OSDNA_opt_param *opt_param){
+    switch (last_char){
+        case 'A':{
+            *actual_bit_size = opt_param->opt_bit_A;
+            *actual_trigger_size = opt_param->opt_trigger_A;
+            break;
+        }
+        case 'C':{
+            *actual_bit_size = opt_param->opt_bit_C;
+            *actual_trigger_size = opt_param->opt_trigger_C;
+            break;
+        }
+        case 'G':{
+            *actual_bit_size = opt_param->opt_bit_G;
+            *actual_trigger_size = opt_param->opt_trigger_G;
+            break;
+        }
+        case 'T':{
+            *actual_bit_size = opt_param->opt_bit_T;
+            *actual_trigger_size = opt_param->opt_trigger_T;
+            break;
+        }
+    }
+}
+
+void manageWrite(int8_t *toWrite, int last_occ_len, int actual_trigger_size, int actual_bit_size, char last_char, OSDNA_opt_param *opt_param,  osdna_bit_write_handler *bit_write_handle){
+    int pointer = 0;
+    int j;
+    int counter = 0;
+    initActualParam(&actual_trigger_size, &actual_bit_size, last_char, opt_param); // init actual trigger and bit size
+
+    if (last_occ_len < actual_trigger_size || actual_trigger_size == 0) {
+        for(j = 0; j < last_occ_len; j++)
+            fillBuffer(toWrite,last_char,-1,false,&pointer,opt_param);
+        counter = last_occ_len * 2;
+    } else if(last_occ_len == actual_trigger_size){
+        for(j = 0; j < last_occ_len; j++){
+            fillBuffer(toWrite, last_char, -1, false, &pointer,opt_param);
+        }
+        fillBuffer(toWrite, last_char, 0, true, &pointer, opt_param);
+        counter = (last_occ_len * 2) + actual_bit_size;
+    } else{
+        for(j = 0; j < actual_trigger_size; j++){
+            fillBuffer(toWrite, last_char, -1,false, &pointer,opt_param);
+        }
+        counter = actual_trigger_size * 2;
+        last_occ_len -= actual_trigger_size;
+        int max_r = (int) pow(2, actual_bit_size);
+        while(last_occ_len > max_r){
+            fillBuffer(toWrite, last_char, max_r, true, &pointer, opt_param);
+            last_occ_len -= max_r;
+            counter += actual_bit_size;
+        }
+        fillBuffer(toWrite, last_char, last_occ_len, true, &pointer, opt_param);
+        counter += actual_bit_size;
     }
 
-    return osdna_bitwriter_finilize(bit_write_handle);
+    osdna_bit_write(bit_write_handle, toWrite, counter);
 }
 
 osdna_status opt_param_calc(OSDNA_opt_param *opt_param) {
@@ -110,10 +204,11 @@ osdna_status opt_param_calc(OSDNA_opt_param *opt_param) {
     }
     total++;
     last_char = buff[0];
-    while (bytesRead = fread(buff, 1, BUFF_SIZE, opt_param->read_stream)) {
+    while (bytesRead = fread(buff, sizeof(char), BUFF_SIZE, opt_param->read_stream)) {
         for (int i = 0; i < bytesRead; i++) {
             curr_char = buff[i];
             total++;
+
             if (POS(curr_char) == -1) {
                 printf("Bad file\n");
                 //return -1;
@@ -189,113 +284,72 @@ osdna_status opt_param_calc(OSDNA_opt_param *opt_param) {
     }
     printf("adv_total %lli\n", adv_total);
 
+    fseek(opt_param->read_stream, SEEK_SET, 0);
+
     return OSDNA_OK;
 }
 
-void dump_occurence(char curr_char, int last_occ_len, osdna_bit_write_handler *bit_write_handle) {
-//    last_occ_len -= 3;
-//    while (last_occ_len >= 3) {
-//        osdna_bit_write_char(bit_write_handle, '3');
-//        last_occ_len -= 3;
-//    }
-//    if (last_occ_len == 2) {
-//        osdna_bit_write_char(bit_write_handle, '2');
-//    }
-//    if (last_occ_len == 1) {
-//        osdna_bit_write_char(bit_write_handle, '1');
-//    }
-//    if (last_occ_len == 0) {
-//        osdna_bit_write_char(bit_write_handle, '0');
-//    }
-//    osdna_bit_write_char(bit_write_handle, curr_char);
-}
+osdna_status compress_core(OSDNA_ctx *ctx) {
+    printf("Initializing compression core\n");
 
-osdna_status decompress_core(OSDNA_ctx *ctx) {
-//    printf("Initializing decompression core\n");
-//
-//    osdna_bit_read_handler *handler = osdna_bit_read_init(ctx->read_stream);
-//    char current_char = 'Q';
-//    osdna_status error = OSDNA_OK;
-//    char prev_char = 'Q';
-//    int last_seq = 1;
-//    bool reading_seq = false;
-////    ctx->trigger_size = 4;
-////    int print_counter = 0;
-//    while ((error = osdna_bit_read_char(handler, &current_char)) == OSDNA_OK) {
-////        if (print_counter % 1024 == 0) {
-////            printf("Processed %d Mb\n", print_counter / 1024);
-////        }
-////        print_counter++;
-//
-//        if (reading_seq) {
-//            reading_seq = false;
-//            last_seq = 1;
-//            int iter_count = char_to_count(current_char);
-//            for (int i = 0; i < iter_count; i++) {
-////                printf("%c", prev_char);
-//                error = write_char(ctx, prev_char);
-//                if (error != OSDNA_OK) {
-//                    return error;
-//                }
-//            }
-//            if (iter_count == ctx->trigger_size) {
-//                reading_seq = true;
-//            }
-//            continue;
-//        }
-//
-//        if (prev_char == current_char) {
-//            last_seq++;
-//            error = write_char(ctx, current_char);
-////            printf("%c", current_char);
-//            if (error != OSDNA_OK) {
-//                return error;
-//            }
-//        } else {
-//            last_seq = 1;
-//            error = write_char(ctx, current_char);
-////            printf("%c", current_char);
-//            if (error != OSDNA_OK) {
-//                return error;
-//            }
-//        }
-//        prev_char = current_char;
-//
-//        if (last_seq == ctx->trigger_size) {
-//            reading_seq = true;
-//            continue;
-//        }
-//
-//
-//    }
-//    if (error == OSDNA_EOF) { // if end of file we finished here!
-//        return write_char(ctx, prev_char, true);
-//    } else {
-//        return error;
-//    }
-}
+    int bytesRead;
+    char file_read_buff[1024]; // for perfomance reasons lets read 1KB at once
+    char curr_char = '#';
+    char last_char;// Any char excluded AGTC
+    osdna_bit_write_handler *bit_write_handle = osdna_bit_init(ctx->write_stream);
+    OSDNA_opt_param *opt_param = (OSDNA_opt_param *) malloc(sizeof(OSDNA_opt_param));
+    opt_param->read_stream = ctx->read_stream;
+    //if((status = opt_param_calc(opt_param)) != OSDNA_OK)
+    //   return status;
 
-int char_to_count(char c) {
-    if (c == 'A')
-        return 0;
-    if (c == 'C')
-        return 1;
-    if (c == 'G')
-        return 2;
-    if (c == 'T')
-        return 3;
-}
+    opt_param->opt_bit_A = 3;
+    opt_param->opt_bit_C = 3;
+    opt_param->opt_bit_T = 3;
+    opt_param->opt_bit_G = 3;
+    opt_param->opt_trigger_A = 2;
+    opt_param->opt_trigger_C = 2;
+    opt_param->opt_trigger_G = 2;
+    opt_param->opt_trigger_T = 2;
 
-osdna_status write_char(OSDNA_ctx *ctx, char c, bool forced) {
-    if (ctx->out_buff_pos == 4096 - 1 || forced) {
-//        printf("%d\n", ctx->out_buff_pos);
-        int bytes = fwrite(ctx->output_buffer, 1, ctx->out_buff_pos, ctx->write_stream);
-        if (bytes != ctx->out_buff_pos) {
-            return OSDNA_IO_ERROR;
+    int actual_bit_size;
+    int actual_trigger_size;
+    auto *toWrite = (int8_t *) malloc(sizeof(int8_t)*1024);
+    int greatestBitLen = getMaxBitLen(opt_param);
+    fread(file_read_buff, sizeof(char), 1, ctx->read_stream);
+
+    curr_char = file_read_buff[0];
+    last_char = curr_char;
+    printf("__%c__\n", curr_char);
+    int last_occ_len = 1;
+
+    memset(file_read_buff, '\0', sizeof(char)*1024);
+
+    while ((bytesRead = (int) fread(file_read_buff, sizeof(char), 1024, ctx->read_stream)) != 0) {
+
+        for (int i = 0; i < bytesRead; i++) {
+            curr_char = file_read_buff[i];
+            printf("__%c__\n", curr_char);
+            if (!is_acceptable_char(curr_char))  // are acceptable only AGCT, everything else is skipped
+                continue;
+
+            if (last_char == curr_char) {
+                last_occ_len++;
+            } else {
+                toWrite = (int8_t*) realloc(toWrite, (sizeof(int8_t)*last_occ_len*2)+greatestBitLen); // 2 location for every char + 0 in bit_len: WROST CASE
+                initActualParam(&actual_trigger_size, &actual_bit_size, last_char, opt_param); // init actual trigger and bit size
+                manageWrite(toWrite, last_occ_len, actual_trigger_size, actual_bit_size, last_char, opt_param, bit_write_handle);
+                last_occ_len = 1;
+            }
+            last_char = curr_char;
         }
-        ctx->out_buff_pos = 0;
+        // last write
+        toWrite = (int8_t*) realloc(toWrite, (sizeof(int8_t)*last_occ_len*2)+greatestBitLen); // 2 location for every char + 0 in bit_len: WROST CASE
+        initActualParam(&actual_trigger_size, &actual_bit_size, last_char, opt_param); // init actual trigger and bit size
+        manageWrite(toWrite, last_occ_len, actual_trigger_size, actual_bit_size, last_char, opt_param, bit_write_handle);
+
+        memset(file_read_buff, '\0', sizeof(char));
     }
-    ctx->output_buffer[ctx->out_buff_pos] = c;
-    ctx->out_buff_pos++;
-    return OSDNA_OK;
+
+    return osdna_bitwriter_finilize(bit_write_handle);
 }
+

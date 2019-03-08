@@ -37,9 +37,9 @@ osdna_status osdna_process(OSDNA_ctx *ctx) {
 
     if (ctx->direction == COMPRESSION) {
         return compress_core(ctx);
-    } else {
+    } /*else {
         return decompress_core(ctx);
-    }
+    }*/
 }
 
 osdna_status osdna_print_statistic(OSDNA_ctx *ctx) {
