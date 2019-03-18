@@ -27,6 +27,7 @@ struct OSDNA_opt_param {
     int opt_bit_C;
     int opt_bit_G;
     int opt_bit_T;
+    long total_read_bytes;
 };
 
 struct OSDNA_opt {
@@ -43,8 +44,8 @@ struct OSDNA_ctx {
     FILE *write_stream = NULL;
     char output_buffer[4096];
     int out_buff_pos;
+    long total_read_bytes;
 };
-
 
 
 OSDNA_ctx *osdna_init_ctx();

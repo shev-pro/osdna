@@ -56,5 +56,11 @@ osdna_status preflight_checks(OSDNA_ctx *ctx) {
         return OSDNA_IO_ERROR;
     }
 
+    fseek(ctx->read_stream, 0L, SEEK_END);
+
+    // calculating the size of the file
+    ctx->total_read_bytes = ftell(ctx->read_stream);
+    fseek(ctx->read_stream, 0L, SEEK_SET);
+
     return OSDNA_OK;
 }
