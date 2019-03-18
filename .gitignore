@@ -5,6 +5,10 @@
 # Prerequisites
 *.d
 
+# Big files
+*.dna
+*.osdna
+
 # Object files
 *.o
 *.ko

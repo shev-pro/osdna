@@ -21,6 +21,7 @@ void printBuffer(int8_t *buff, int pointer){
     }
     printf("\n");
 }
+
 int getMaxBitLen(OSDNA_opt_param *opt){
     int toReturn = 0;
     toReturn = (opt->opt_bit_A > opt->opt_bit_C)?opt->opt_bit_A:opt->opt_bit_C;
@@ -196,8 +197,45 @@ void manageWrite(int8_t *toWrite, int last_occ_len, int actual_trigger_size, int
     }
 #ifdef DEBUG
     printBuffer(toWrite, pointer);
-    osdna_bit_write(bit_write_handle, toWrite, counter);
 #endif
+    osdna_bit_write(bit_write_handle, toWrite, counter);
+}
+
+void readHeader(OSDNA_opt_param *opt_param, osdna_bit_read_handler *hdl){
+
+    opt_param->opt_trigger_A = 8;
+    opt_param->opt_trigger_C = 9;
+    opt_param->opt_trigger_G = 9;
+    opt_param->opt_trigger_T = 8;
+    opt_param->opt_bit_A = 3;
+    opt_param->opt_bit_C = 2;
+    opt_param->opt_bit_G = 2;
+    opt_param->opt_bit_T = 3;
+
+}
+
+char decodeBit(int8_t *r){
+    if(r[0] == 0) {
+        if (r[1] == 0)
+            return 'A';
+        else
+            return 'C';
+    }
+    else {
+        if (r[1] == 0)
+            return 'G';
+        else
+            return 'T';
+    }
+}
+
+int getDecimalByBinary(int8_t const *buff, int count) {
+    int toReturn = 0;
+    for(int i = 0; i < count; i++){
+        if(buff[i] == 1)
+            toReturn += (int) pow(2,count - i - 1);
+    }//0
+    return toReturn;
 }
 
 osdna_status opt_param_calc(OSDNA_opt_param *opt_param) {
@@ -225,14 +263,14 @@ osdna_status opt_param_calc(OSDNA_opt_param *opt_param) {
         return OSDNA_IO_ERROR;
     }
 
-    bytesRead = fread(buff, 1, 1, opt_param->read_stream);
+    bytesRead = (int) fread(buff, 1, 1, opt_param->read_stream);
     if (bytesRead == 0) {
         printf("Error empty file\n");
         return OSDNA_IO_ERROR;
     }
     total++;
     last_char = buff[0];
-    while (bytesRead = fread(buff, sizeof(char), BUFF_SIZE, opt_param->read_stream)) {
+    while (bytesRead = (int)fread(buff, sizeof(char), BUFF_SIZE, opt_param->read_stream)) {
         for (int i = 0; i < bytesRead; i++) {
             curr_char = buff[i];
             total++;
@@ -320,6 +358,7 @@ osdna_status opt_param_calc(OSDNA_opt_param *opt_param) {
 osdna_status compress_core(OSDNA_ctx *ctx) {
     printf("Initializing compression core\n");
 
+    osdna_status status;
     int bytesRead;
     char file_read_buff[1024]; // for perfomance reasons lets read 1KB at once
     char curr_char = '#';
@@ -327,9 +366,9 @@ osdna_status compress_core(OSDNA_ctx *ctx) {
     osdna_bit_write_handler *bit_write_handle = osdna_bit_init(ctx->write_stream);
     OSDNA_opt_param *opt_param = (OSDNA_opt_param *) malloc(sizeof(OSDNA_opt_param));
     opt_param->read_stream = ctx->read_stream;
-    //if((status = opt_param_calc(opt_param)) != OSDNA_OK)
-    //   return status;
-
+    if((status = opt_param_calc(opt_param)) != OSDNA_OK)
+       return status;
+/*
     opt_param->opt_bit_A = 3;
     opt_param->opt_bit_C = 3;
     opt_param->opt_bit_T = 2;
@@ -337,7 +376,7 @@ osdna_status compress_core(OSDNA_ctx *ctx) {
     opt_param->opt_trigger_A = 2;
     opt_param->opt_trigger_C = 2;
     opt_param->opt_trigger_G = 2;
-    opt_param->opt_trigger_T = 2;
+    opt_param->opt_trigger_T = 2;*/
 
     int actual_bit_size;
     int actual_trigger_size;
@@ -347,7 +386,6 @@ osdna_status compress_core(OSDNA_ctx *ctx) {
 
     curr_char = file_read_buff[0];
     last_char = curr_char;
-    printf("__%c__\n", curr_char);
     int last_occ_len = 1;
 
     memset(file_read_buff, '\0', sizeof(char)*1024);
@@ -356,7 +394,6 @@ osdna_status compress_core(OSDNA_ctx *ctx) {
 
         for (int i = 0; i < bytesRead; i++) {
             curr_char = file_read_buff[i];
-            printf("__%c__\n", curr_char);
             if (!is_acceptable_char(curr_char))  // are acceptable only AGCT, everything else is skipped
                 continue;
 
@@ -370,14 +407,94 @@ osdna_status compress_core(OSDNA_ctx *ctx) {
             }
             last_char = curr_char;
         }
-        // last write
-        toWrite = (int8_t*) realloc(toWrite, (sizeof(int8_t)*last_occ_len*2)+greatestBitLen); // 2 location for every char + 0 in bit_len: WROST CASE
-        initActualParam(&actual_trigger_size, &actual_bit_size, last_char, opt_param); // init actual trigger and bit size
-        manageWrite(toWrite, last_occ_len, actual_trigger_size, actual_bit_size, last_char, opt_param, bit_write_handle);
 
         memset(file_read_buff, '\0', sizeof(char));
     }
 
+    toWrite = (int8_t*) realloc(toWrite, (sizeof(int8_t)*last_occ_len*2)+greatestBitLen); // 2 location for every char + 0 in bit_len: WROST CASE
+    initActualParam(&actual_trigger_size, &actual_bit_size, curr_char, opt_param); // init actual trigger and bit size
+    manageWrite(toWrite, last_occ_len, actual_trigger_size, actual_bit_size, last_char, opt_param, bit_write_handle);
+
     return osdna_bitwriter_finilize(bit_write_handle);
 }
+
+osdna_status decompress_core(OSDNA_ctx *ctx){
+    printf("Initializing decompression core\n");
+
+    osdna_status status;
+    int nToRead = 2;
+    int max_r;
+    int last_occ_len = 1;
+    int actual_trigger_size;
+    int actual_bit_size;
+    int8_t buff[1024]; // for perfomance reasons lets read 1KB at once
+    char toWrite[1024];
+    int writePointer = 0;
+    char curr_char;
+    char last_char = '#';// Any char excluded AGTC
+    osdna_bit_read_handler *bit_read_handle = osdna_bit_read_init(ctx->read_stream);
+    OSDNA_opt_param *opt = (OSDNA_opt_param *) malloc(sizeof(OSDNA_opt_param));
+    readHeader(opt, bit_read_handle);
+    status = osdna_bit_read(bit_read_handle, buff, &nToRead);
+
+    curr_char = decodeBit(buff);
+    while(status == OSDNA_OK ) {
+
+        if (curr_char != last_char)
+            last_occ_len = 1;
+        else
+            last_occ_len++;
+        actual_bit_size = getBitLengthByChar(opt, curr_char);
+        actual_trigger_size = getTriggerSizeByChar(opt, curr_char);
+        if (actual_trigger_size == 0 || last_occ_len < actual_trigger_size) {
+            toWrite[writePointer++] = curr_char;
+            if (writePointer % 1024 == 0) {
+                fwrite(toWrite, sizeof(char), 1024, ctx->write_stream);
+                writePointer = 0;
+            }
+        } else {
+            toWrite[writePointer++] = curr_char;
+            if (writePointer % 1024 == 0) {
+                fwrite(toWrite, sizeof(char), 1024, ctx->write_stream);
+                writePointer = 0;
+            }
+            nToRead = actual_bit_size;
+            osdna_bit_read(bit_read_handle, buff, &nToRead);
+            last_occ_len = getDecimalByBinary(buff, actual_bit_size);
+            max_r = (int) (pow(2, actual_bit_size)) - 1;
+            while (last_occ_len == max_r) {
+                for (int i = 0; i < max_r; i++) {
+                    toWrite[writePointer++] = curr_char;
+                    if (writePointer % 1024 == 0) {
+                        fwrite(toWrite, sizeof(char), 1024, ctx->write_stream);
+                        writePointer = 0;
+                    }
+                }
+                osdna_bit_read(bit_read_handle, buff, &nToRead);
+                last_occ_len = getDecimalByBinary(buff, actual_bit_size);
+            }
+            for (int i = 0; i < last_occ_len; i++) {
+                toWrite[writePointer++] = curr_char;
+                if (writePointer % 1024 == 0) {
+                    fwrite(toWrite, sizeof(char), 1024, ctx->write_stream);
+                    writePointer = 0;
+                }
+            }
+        }
+
+        nToRead = 2; // last char write
+        last_char = curr_char;
+        status = osdna_bit_read(bit_read_handle, buff, &nToRead);
+        curr_char = decodeBit(buff);
+
+    }
+
+    if(writePointer != 0){
+        fwrite(toWrite, sizeof(char), (size_t)writePointer, ctx->write_stream);
+    }
+
+    fflush(ctx->write_stream);
+    fclose(ctx->write_stream);
+    return OSDNA_OK;
+    }
 
