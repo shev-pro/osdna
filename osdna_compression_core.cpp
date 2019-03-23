@@ -9,7 +9,7 @@
 
 //#define DEBUG
 #define BUFF_SIZE 1024
-#define MAX_TRIGGER_SIZE 2000
+#define MAX_TRIGGER_SIZE 4096
 #define BIT_ENCODE_SIZE 10
 #define POS(X) (X == 'A' ? 0 : (X=='C' ? 1 : (X=='G' ? 2 : (X=='T' ? 3 : -1))))
 
@@ -513,10 +513,11 @@ osdna_status decompress_core(OSDNA_ctx *ctx) {
     readHeader(opt, bit_read_handle);
     status = osdna_bit_read(bit_read_handle, buff, &nToRead);
 
-
+    long total_bytes_read = 0;
+    printf("Starting decompression ...\n");
     curr_char = decodeBit(buff);
     while (status == OSDNA_OK) {
-
+        total_bytes_read++;
         if (curr_char != last_char)
             last_occ_len = 1;
         else
@@ -528,12 +529,16 @@ osdna_status decompress_core(OSDNA_ctx *ctx) {
             if (writePointer % 1024 == 0) {
                 fwrite(toWrite, sizeof(char), 1024, ctx->write_stream);
                 writePointer = 0;
+                printf("\rIn progress %d percent", (100 * total_bytes_read / ctx->total_read_bytes));
+                fflush(stdout);
             }
         } else {
             toWrite[writePointer++] = curr_char;
             if (writePointer % 1024 == 0) {
                 fwrite(toWrite, sizeof(char), 1024, ctx->write_stream);
                 writePointer = 0;
+                printf("\rIn progress %d percent", (100 * total_bytes_read / ctx->total_read_bytes));
+                fflush(stdout);
             }
             nToRead = actual_bit_size;
             osdna_bit_read(bit_read_handle, buff, &nToRead);

@@ -2,7 +2,7 @@
 #define OSDNA_OSDNA_BITWRITER_H
 
 #include "osdna_compressor.h"
-
+#include <stdint.h>
 /**
  * Bit writing abstraction, allows character write without handling mask shift
  */

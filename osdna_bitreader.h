@@ -1,6 +1,6 @@
 #ifndef OSDNA_OSDNA_BITREADER_H
 #define OSDNA_OSDNA_BITREADER_H
-
+#include <stdint.h>
 #include "osdna_compressor.h"
 
 #include <cstdio>
