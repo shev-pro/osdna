@@ -28,6 +28,7 @@ struct OSDNA_opt_param {
     int opt_bit_G;
     int opt_bit_T;
     long total_read_bytes;
+    int dollar_position;
 };
 
 struct OSDNA_opt {
@@ -45,6 +46,7 @@ struct OSDNA_ctx {
     char output_buffer[4096];
     int out_buff_pos;
     long total_read_bytes;
+    bool bwt = false;
 };
 
 
@@ -64,5 +66,7 @@ void osdna_free_ctx(OSDNA_ctx *ctx);
 
 //osdna_status opt_trigger_calc(FILE *read_stream, int *trigger_size, int *bit_per_num);
 osdna_status opt_param_calc(OSDNA_opt_param *opt_param);
+
+void restore_dollar_position(OSDNA_ctx *ctx, OSDNA_opt_param *opt_param);
 
 #endif //OSDNA_OSDNA_COMPRESSOR_H

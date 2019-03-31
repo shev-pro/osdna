@@ -11,7 +11,7 @@
 #define BUFF_SIZE 1024
 #define MAX_TRIGGER_SIZE 4096
 #define BIT_ENCODE_SIZE 10
-#define POS(X) (X == 'A' ? 0 : (X=='C' ? 1 : (X=='G' ? 2 : (X=='T' ? 3 : -1))))
+#define POS(X) (X == 'A' ? 0 : (X=='C' ? 1 : (X=='G' ? 2 : (X=='T' ? 3 : (X=='$' ? 4 : -1)))))
 
 
 void printBuffer(int8_t *buff, int pointer) {
@@ -294,6 +294,31 @@ char decodeBit(int8_t *r) {
     }
 }
 
+void restore_dollar_position(OSDNA_ctx *ctx, OSDNA_opt_param *opt_param){
+    int bytesRead=0;
+    char buff[BUFF_SIZE];
+    char curr_char;
+    int curr_pos=0;
+
+    rewind(ctx->read_stream);
+    rewind(ctx->write_stream);
+
+    while (bytesRead = (int) fread(buff, sizeof(char), BUFF_SIZE, ctx->read_stream)) {
+        for (int i = 0; i < bytesRead; i++) {
+            curr_char = buff[i];
+            curr_pos++;
+            if (opt_param->dollar_position==curr_pos){
+                printf("position: %d\n", curr_pos);
+                fprintf(ctx->write_stream, "%c", '$');
+            } else if (curr_char != '$'){
+                fprintf(ctx->write_stream, "%c", curr_char);
+            }
+        }
+    }
+    rewind(ctx->read_stream);
+    rewind(ctx->write_stream);
+}
+
 osdna_status opt_param_calc(OSDNA_opt_param *opt_param) {
     printf("Starting opt_param_calc\n");
     long long occ_matr[4][MAX_TRIGGER_SIZE];
@@ -340,6 +365,10 @@ osdna_status opt_param_calc(OSDNA_opt_param *opt_param) {
                 printf("Bad file\n");
                 //return -1;
                 continue;  //skip bad character occurrences
+            }
+            if(POS(curr_char) == 4){
+                opt_param->dollar_position = total;
+                continue;
             }
             if (curr_char == last_char)
                 cont++;
@@ -416,7 +445,7 @@ osdna_status opt_param_calc(OSDNA_opt_param *opt_param) {
     printf("adv_total %lli\n", adv_total);
 #endif
 
-    fseek(opt_param->read_stream, SEEK_SET, 0);
+    fseek(opt_param->read_stream, 0, SEEK_SET);
     printf("\rOpt finished\n");
     return OSDNA_OK;
 }
