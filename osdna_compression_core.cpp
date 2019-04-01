@@ -80,7 +80,20 @@ void decimalToBinaryBuffer(int8_t *buff, int v) {
     }
 }
 
-void writeHeader(OSDNA_opt_param *opt_param, osdna_bit_write_handler *hdl) {
+void decimalToBinaryBufferLong(int8_t *buff, long v) {
+    long n, c, k, pointer = 0;
+    n = v;
+    for (c = 31; c >= 0; c--) {
+        k = n >> c;
+        k = k & 1;
+        if (k)
+            buff[pointer++] = 1;
+        else
+            buff[pointer++] = 0;
+    }
+}
+
+void writeHeader(OSDNA_ctx *ctx, OSDNA_opt_param *opt_param, osdna_bit_write_handler *hdl) {
     int8_t toWrite[8];
     decimalToBinaryBuffer(toWrite, opt_param->opt_trigger_A);
     osdna_bit_write(hdl, toWrite, 8);
@@ -98,6 +111,12 @@ void writeHeader(OSDNA_opt_param *opt_param, osdna_bit_write_handler *hdl) {
     osdna_bit_write(hdl, toWrite, 8);
     decimalToBinaryBuffer(toWrite, opt_param->opt_bit_T);
     osdna_bit_write(hdl, toWrite, 8);
+
+    if(ctx->bwt) {
+        int8_t dollarPosition[32];
+        decimalToBinaryBufferLong(dollarPosition, opt_param->dollar_position);
+        osdna_bit_write(hdl, dollarPosition, 32);
+    }
 
 #ifdef DEBUG
     printf("WRITE HEADER \n%d-%d\n%d-%d\n%d-%d\n%d-%d", opt_param->opt_trigger_A, opt_param->opt_bit_A,
@@ -251,7 +270,7 @@ int getDecimalByBinary(int8_t const *buff, int count) {
     return toReturn;
 }
 
-void readHeader(OSDNA_opt_param *opt_param, osdna_bit_read_handler *hdl) {
+void readHeader(OSDNA_ctx *ctx, OSDNA_opt_param *opt_param, osdna_bit_read_handler *hdl) {
 
     int8_t buff[8];
     int count = 8;
@@ -271,6 +290,13 @@ void readHeader(OSDNA_opt_param *opt_param, osdna_bit_read_handler *hdl) {
     opt_param->opt_trigger_T = getDecimalByBinary(buff, 8);
     osdna_bit_read(hdl, buff, &count);
     opt_param->opt_bit_T = getDecimalByBinary(buff, 8);
+
+    if(ctx->bwt) {
+        count = 32;
+        int8_t dollarPosition[32];
+        osdna_bit_read(hdl, dollarPosition, &count);
+        opt_param->dollar_position = getDecimalByBinary(dollarPosition, 32);
+    }
 
 #ifdef DEBUG
     printf("READ HEADER \n%d-%d\n%d-%d\n%d-%d\n%d-%d", opt_param->opt_trigger_A, opt_param->opt_bit_A,
@@ -295,28 +321,27 @@ char decodeBit(int8_t *r) {
 }
 
 void restore_dollar_position(OSDNA_ctx *ctx, OSDNA_opt_param *opt_param){
-    int bytesRead=0;
-    char buff[BUFF_SIZE];
-    char curr_char;
-    int curr_pos=0;
-
-    rewind(ctx->read_stream);
-    rewind(ctx->write_stream);
-
-    while (bytesRead = (int) fread(buff, sizeof(char), BUFF_SIZE, ctx->read_stream)) {
-        for (int i = 0; i < bytesRead; i++) {
-            curr_char = buff[i];
-            curr_pos++;
-            if (opt_param->dollar_position==curr_pos){
-                printf("position: %d\n", curr_pos);
-                fprintf(ctx->write_stream, "%c", '$');
-            } else if (curr_char != '$'){
-                fprintf(ctx->write_stream, "%c", curr_char);
-            }
-        }
+    char name[4096];
+    sprintf(name, "%s.temp", ctx->output_file);
+    rename(ctx->output_file, name);
+    FILE *read = fopen(name, "r");
+    FILE *write = fopen(ctx->output_file, "w");
+    long r = 0L;
+    while(r < opt_param->dollar_position - 1){
+        fputc(fgetc(read), write);
+        r++;
     }
-    rewind(ctx->read_stream);
-    rewind(ctx->write_stream);
+    fputc((int)'$', write);
+    while(1){
+        int aaa = fgetc(read);
+        if(aaa == EOF)
+            break;
+        fputc(aaa, write);
+    }
+    fflush(write);
+    fclose(write);
+    fclose(read);
+    remove(name);
 }
 
 osdna_status opt_param_calc(OSDNA_opt_param *opt_param) {
@@ -474,7 +499,7 @@ osdna_status compress_core(OSDNA_ctx *ctx) {
     opt_param->opt_trigger_G = 2;
     opt_param->opt_trigger_T = 2;*/
 
-    writeHeader(opt_param, bit_write_handle);
+    writeHeader(ctx, opt_param, bit_write_handle);
 
     int actual_bit_size;
     int actual_trigger_size;
@@ -539,7 +564,7 @@ osdna_status decompress_core(OSDNA_ctx *ctx) {
     char last_char = '#';// Any char excluded AGTC
     osdna_bit_read_handler *bit_read_handle = osdna_bit_read_init(ctx->read_stream);
     OSDNA_opt_param *opt = (OSDNA_opt_param *) malloc(sizeof(OSDNA_opt_param));
-    readHeader(opt, bit_read_handle);
+    readHeader(ctx, opt, bit_read_handle);
     status = osdna_bit_read(bit_read_handle, buff, &nToRead);
 
     long total_bytes_read = 0;
@@ -606,6 +631,9 @@ osdna_status decompress_core(OSDNA_ctx *ctx) {
 
     fflush(ctx->write_stream);
     fclose(ctx->write_stream);
+
+    if(ctx->bwt)
+        restore_dollar_position(ctx, opt);
+
     return OSDNA_OK;
 }
-

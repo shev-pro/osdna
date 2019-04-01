@@ -16,20 +16,21 @@
 int main(int argc, char *argv[]) {
     clock_t start = clock();
     if (argc != 4 && argc != 5) {
-        printf("Usage: <C for compression or D for decompression> [--bwt] <input> <output>\n");
+        printf("Usage: <C for compression or D for decompression> <input> <output> [--bwt]\n");
         exit(-2);
     }
     OSDNA_ctx *ctx = osdna_init_ctx();
+    ctx->bwt = false;
     if (strncmp(argv[1], "C", 1) == 0) {
         osdna_set_direction(ctx, COMPRESSION);
     }
     if (strncmp(argv[1], "D", 1) == 0) {
         osdna_set_direction(ctx, DECOMPRESSION);
     }
-    if (argc == 5 && strncmp(argv[2], "--bwt", 5) == 0){
+    if (argc == 5 && strncmp(argv[4], "--bwt", 5) == 0){
         ctx->bwt = true;
     } else {
-        printf("Usage: <C for compression or D for decompression> [--bwt] <input> <output>\n");
+        printf("Usage: <C for compression or D for decompression> <input> <output> [--bwt]\n");
         exit(-2);
     }
 

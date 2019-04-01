@@ -28,7 +28,7 @@ struct OSDNA_opt_param {
     int opt_bit_G;
     int opt_bit_T;
     long total_read_bytes;
-    int dollar_position;
+    long dollar_position;
 };
 
 struct OSDNA_opt {
