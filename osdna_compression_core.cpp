@@ -332,11 +332,9 @@ void restore_dollar_position(OSDNA_ctx *ctx, OSDNA_opt_param *opt_param){
         r++;
     }
     fputc((int)'$', write);
-    while(1){
-        int aaa = fgetc(read);
-        if(aaa == EOF)
-            break;
-        fputc(aaa, write);
+    int ch;
+    while((ch = fgetc(read))!=EOF){
+        fputc(ch, write);
     }
     fflush(write);
     fclose(write);
