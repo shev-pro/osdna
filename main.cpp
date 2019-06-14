@@ -7,8 +7,6 @@
 #include "osdna_utils.h"
 #include "osdna_compressor.h"
 
-// C program to find Burrows Wheeler transform of
-// a given text
 #include<stdio.h>
 #include<string.h>
 #include<stdlib.h>
@@ -27,11 +25,14 @@ int main(int argc, char *argv[]) {
     if (strncmp(argv[1], "D", 1) == 0) {
         osdna_set_direction(ctx, DECOMPRESSION);
     }
-    if (argc == 5 && strncmp(argv[4], "--bwt", 5) == 0){
-        ctx->bwt = true;
-    } else {
-        printf("Usage: <C for compression or D for decompression> <input> <output> [--bwt]\n");
-        exit(-2);
+    if (argc == 5) {
+        if (strncmp(argv[4], "--bwt", 5) == 0) {
+            ctx->bwt = true;
+            printf("BWT enabled\n");
+        } else {
+            printf("Usage: <C for compression or D for decompression> <input> <output> [--bwt]\n");
+            exit(-2);
+        }
     }
 
     osdna_set_input_file(ctx, argv[2]);
