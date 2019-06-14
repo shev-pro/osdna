@@ -2,7 +2,7 @@
 
 The aim of our project was the design and development of a data compression algorithm, dedicated to ondimensional inputs, in the specic text codification of the nucleotide sequences composing the DNA, generally known as Fasta format.
 
-Further description and compression comparisons with other algorithms can be found [in the project pdf in ITA](https://github.com/mrneutro/osdna/blob/master/OsDNA.pdf).
+Further description and compression comparisons with other algorithms can be found [in the project pdf in ITA](https://github.com/mrneutro/osdna/blob/master/OsDNA.pdf). Raw comparisons are available [here](https://github.com/mrneutro/osdna/blob/master/CompressionComparisons.pdf)
 
 ## Compilation
 Project is built with contains CmakeLists and can be built with next steps:

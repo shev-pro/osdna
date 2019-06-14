@@ -1,3 +1,6 @@
+/*H**********************************************************************
+*       Copyright Ferdinando D'Avino, Lino Sarto, Sergiy Shevchenko 2019.  All rights reserved.
+*H*/
 #include <cstdio>
 #include <cstdlib>
 #include "osdna_bitwriter.h"

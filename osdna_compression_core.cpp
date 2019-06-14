@@ -1,3 +1,6 @@
+/*H**********************************************************************
+*       Copyright Ferdinando D'Avino, Lino Sarto, Sergiy Shevchenko 2019.  All rights reserved.
+*H*/
 #include "osdna_compression_core.h"
 #include "osdna_utils.h"
 #include "osdna_bitwriter.h"
